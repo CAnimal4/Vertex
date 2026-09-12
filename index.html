@@ -10,6 +10,9 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
   <style>[hidden]{display:none!important}</style>
+  <style>
+    .analytics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}.dashboard-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}.home-overview-label{display:block;color:var(--pine);font-size:.72rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.dashboard-section-heading small{color:var(--muted)}.analytics-card{min-height:112px;padding:14px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8}.analytics-card span{display:block;color:var(--muted);font-size:.7rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.analytics-card strong{display:block;margin:8px 0 2px;font-size:1.45rem}.analytics-card small{color:var(--muted)}.session-history{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}.session-history h2{margin:0}.session-history p{margin:6px 0 0;color:var(--muted)}.premium-request-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.premium-request-divider:before,.premium-request-divider:after{content:"";height:1px;flex:1;background:var(--line)}.premium-request-toggle{width:100%}.premium-request-form{display:grid;gap:12px;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#f7fdf8}.premium-request-form label{display:grid;gap:6px}.premium-request-form input{width:100%;padding:10px 12px;border:1px solid #bdd4c3;border-radius:10px;background:#fff;color:var(--ink)}.premium-request-form .primary{width:100%}@media(max-width:720px){.analytics-grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -23,7 +26,7 @@
         <div class="app-switcher" id="appSwitcherMenu" hidden>
           <p class="switcher-label">Learning apps</p>
           <a class="switcher-app" href="https://clarospanish.vercel.app" data-app="claro">
-            <img src="https://clarospanish.vercel.app/assets/claro-mark.png?v=20260817-2" alt="" class="switcher-mark">
+            <img src="https://clarospanish.vercel.app/assets/claro-mark.png?v=20260912-1" alt="" class="switcher-mark">
             <span><strong>Claro</strong><small>Spanish learning</small></span>
           </a>
           <a class="switcher-app is-current" href="https://vertexmath.vercel.app" data-app="vertex" aria-current="page">
@@ -43,16 +46,23 @@
         <div><p class="eyebrow">Your math workspace</p><h1 id="dashboardTitle">Accelerated Geometry</h1><p id="dashboardDescription">Build confidence with clear, focused geometry practice.</p></div>
         <img src="assets/vertex-mark.png" alt="" class="hero-mark">
       </section>
-      <section class="overview-grid" aria-label="Dashboard overview">
-        <article><span>Class</span><strong>Accelerated Geometry</strong><small>Your first Vertex dashboard.</small></article>
-        <article><span>Modules</span><strong id="moduleCount">0</strong><small>Ready to be added when you are.</small></article>
-        <article><span>Progress</span><strong>Starts here</strong><small>Saved privately in this browser.</small></article>
+      <section class="dashboard-analytics" aria-labelledby="analyticsTitle">
+        <div class="dashboard-section-heading"><div><span class="home-overview-label">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div><small>Saved in this browser</small></div>
+        <div class="analytics-grid">
+          <div class="analytics-card analytics-card-accuracy"><span>Accuracy</span><strong>0%</strong><small>all-time correct</small></div>
+          <div class="analytics-card analytics-card-correct"><span>Correct</span><strong>0</strong><small>of 0 answered</small></div>
+          <div class="analytics-card analytics-card-streak"><span>Current streak</span><strong>0</strong><small>correct in a row</small></div>
+          <div class="analytics-card analytics-card-best"><span>Best streak</span><strong>0</strong><small>personal best</small></div>
+          <div class="analytics-card analytics-card-sessions"><span>Sessions</span><strong>0</strong><small>completed sessions</small></div>
+        </div>
+      </section>
       </section>
       <section class="modules-section" aria-labelledby="modulesHeading">
-        <div class="section-heading"><div><p class="eyebrow">Course modules</p><h2 id="modulesHeading">Your learning path</h2></div><span id="moduleStatus" class="status-pill">Preparing</span></div>
+        <div class="section-heading"><div><p class="eyebrow">Course modules</p><h2 id="modulesHeading">Your learning path</h2></div><span id="moduleStatus" class="status-pill">Preparing</span><span id="moduleCount" hidden>0</span></div>
         <div id="moduleList" class="module-list"></div>
       </section>
       <details class="how-it-works"><summary>How Vertex will work</summary><p>Choose a module, work through one focused concept at a time, and return whenever you are ready. Accelerated Geometry modules have not been added yet.</p></details>
+      <section class="session-history" aria-labelledby="historyTitle"><p class="eyebrow">History</p><h2 id="historyTitle">Practice sessions</h2><p>Complete a session and it will appear here.</p></section>
     </main>
   </div>
 
@@ -75,6 +85,8 @@
     <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
       <div class="modal-heading"><div><h2 id="premiumTitle">Premium access</h2><p>Use your existing access password.</p></div><button class="icon-button" id="premiumClose" aria-label="Close premium access">×</button></div>
       <form id="premiumForm"><label>Access password<input id="premiumPassword" type="password" autocomplete="current-password" required></label><div class="modal-actions"><button class="primary" type="submit">Unlock premium</button></div><p class="form-status" id="premiumStatus">Premium is verified securely when Vertex is deployed with its server configuration.</p></form>
+      <div class="premium-request-divider"><span>Need access?</span></div><button class="secondary premium-request-toggle" id="premiumRequestToggle" type="button">Request premium access</button>
+      <form id="premiumRequestForm" class="premium-request-form" hidden><label>Name<input id="premiumRequestName" autocomplete="name" required></label><label>Email<input id="premiumRequestEmail" type="email" autocomplete="email" required></label><button class="primary" type="submit">Send request</button><p class="form-status" id="premiumRequestStatus"></p></form>
     </section>
   </div>
   <script src="app.js"></script>
