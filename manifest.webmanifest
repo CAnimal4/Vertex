@@ -1,0 +1,10 @@
+{
+  "name": "Vertex Math",
+  "short_name": "Vertex",
+  "description": "A focused math practice space.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5faf6",
+  "theme_color": "#166534",
+  "icons": [{ "src": "assets/vertex-mark.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }]
+}

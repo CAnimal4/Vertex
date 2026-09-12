@@ -1,1 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#166534">
+  <meta name="application-name" content="Vertex">
+  <title>Vertex — Accelerated Geometry</title>
+  <link rel="icon" href="assets/vertex-mark.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <style>[hidden]{display:none!important}</style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <button class="brand-button" id="appSwitcherButton" aria-expanded="false" aria-controls="appSwitcherMenu">
+          <img src="assets/vertex-mark.png" alt="" class="brand-mark">
+          <span class="brand-copy"><strong>Vertex</strong><span id="headerDashboard">Accelerated Geometry</span></span>
+          <span class="chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="app-switcher" id="appSwitcherMenu" hidden>
+          <p class="switcher-label">Learning apps</p>
+          <a class="switcher-app" href="https://clarospanish.vercel.app" data-app="claro">
+            <img src="https://clarospanish.vercel.app/assets/claro-mark.png?v=20260817-2" alt="" class="switcher-mark">
+            <span><strong>Claro</strong><small>Spanish learning</small></span>
+          </a>
+          <a class="switcher-app is-current" href="https://vertexmath.vercel.app" data-app="vertex" aria-current="page">
+            <img src="assets/vertex-mark.png" alt="" class="switcher-mark">
+            <span><strong>Vertex</strong><small>Math learning</small></span><em>Current</em>
+          </a>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="dashboard-chip"><span></span> Geometry</span>
+        <button class="text-button" id="premiumButton" type="button">Premium</button>
+      </div>
+    </header>
 
+    <main class="dashboard-card" id="dashboardRoot">
+      <section class="hero">
+        <div><p class="eyebrow">Your math workspace</p><h1 id="dashboardTitle">Accelerated Geometry</h1><p id="dashboardDescription">Build confidence with clear, focused geometry practice.</p></div>
+        <img src="assets/vertex-mark.png" alt="" class="hero-mark">
+      </section>
+      <section class="overview-grid" aria-label="Dashboard overview">
+        <article><span>Class</span><strong>Accelerated Geometry</strong><small>Your first Vertex dashboard.</small></article>
+        <article><span>Modules</span><strong id="moduleCount">0</strong><small>Ready to be added when you are.</small></article>
+        <article><span>Progress</span><strong>Starts here</strong><small>Saved privately in this browser.</small></article>
+      </section>
+      <section class="modules-section" aria-labelledby="modulesHeading">
+        <div class="section-heading"><div><p class="eyebrow">Course modules</p><h2 id="modulesHeading">Your learning path</h2></div><span id="moduleStatus" class="status-pill">Preparing</span></div>
+        <div id="moduleList" class="module-list"></div>
+      </section>
+      <details class="how-it-works"><summary>How Vertex will work</summary><p>Choose a module, work through one focused concept at a time, and return whenever you are ready. Accelerated Geometry modules have not been added yet.</p></details>
+    </main>
+  </div>
+
+  <button class="feedback-button" id="feedbackButton" type="button">✦ Feedback</button>
+  <div class="modal-overlay" id="feedbackOverlay" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+      <div class="modal-heading"><div><h2 id="feedbackTitle">Send feedback</h2><p>Ideas and module requests help shape Vertex.</p></div><button class="icon-button" id="feedbackClose" aria-label="Close feedback">×</button></div>
+      <form id="feedbackForm">
+        <label>Feedback type<select id="feedbackType" name="feedback_type"><option value="general">General feedback or suggestion</option><option value="module_request">Request a new module</option><option value="feedback_system">Feedback about the feedback experience</option></select></label>
+        <label id="requestedModuleField" hidden>Module you would like<input id="requestedModule" name="requested_module" maxlength="160" placeholder="For example: triangle congruence"></label>
+        <label>Your feedback<textarea id="feedbackMessage" name="message" maxlength="2000" required placeholder="What should be improved?"></textarea></label>
+        <label>Email <small>(optional, if you want a reply)</small><input id="feedbackEmail" name="email" type="email" maxlength="160" autocomplete="email"></label>
+        <div class="modal-actions"><button class="secondary" type="button" id="feedbackCancel">Cancel</button><button class="primary" type="submit">Continue to feedback form</button></div>
+        <p class="form-status" id="feedbackStatus">Feedback delivery will be enabled when a Vertex form URL is configured.</p>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="premiumOverlay" hidden>
+    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
+      <div class="modal-heading"><div><h2 id="premiumTitle">Premium access</h2><p>Use your existing access password.</p></div><button class="icon-button" id="premiumClose" aria-label="Close premium access">×</button></div>
+      <form id="premiumForm"><label>Access password<input id="premiumPassword" type="password" autocomplete="current-password" required></label><div class="modal-actions"><button class="primary" type="submit">Unlock premium</button></div><p class="form-status" id="premiumStatus">Premium is verified securely when Vertex is deployed with its server configuration.</p></form>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

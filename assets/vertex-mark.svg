@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Vertex provisional mark</title>
+  <rect width="128" height="128" rx="31" fill="#14532d"/>
+  <path d="M27 34 61 95c1.4 2.5 5 2.5 6.4 0l33.6-61" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="15"/>
+  <circle cx="64" cy="94" r="6" fill="#86efac"/>
+</svg>
