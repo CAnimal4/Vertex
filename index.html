@@ -9,13 +9,16 @@
   <link rel="icon" href="assets/vertex-mark.png" type="image/png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="parity.css">
+  <link rel="stylesheet" href="app-modifiers.css">
+  <link rel="stylesheet" href="style-shared.css">
   <style>[hidden]{display:none!important}</style>
   <style>
     .analytics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}.dashboard-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}.home-overview-label{display:block;color:var(--pine);font-size:.72rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.dashboard-section-heading small{color:var(--muted)}.analytics-card{min-height:112px;padding:14px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8;transition:transform .18s ease,box-shadow .18s ease}.analytics-card:hover,.vertex-overview-cards article:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(20,83,45,.12)}.analytics-card span{display:block;color:var(--muted);font-size:.7rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.analytics-card strong{display:block;margin:8px 0 2px;font-size:1.45rem}.analytics-card small{color:var(--muted)}.analytics-card-accuracy strong,.analytics-card-correct strong{color:#15803d}.analytics-card-streak strong,.analytics-card-best strong{color:#c2410c}.analytics-card-sessions strong{color:#2563eb}.vertex-overview-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}.vertex-overview-cards article{display:grid;gap:5px;padding:16px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8;transition:transform .18s ease,box-shadow .18s ease}.vertex-overview-cards strong{font-size:1.05rem}.vertex-overview-cards small{color:var(--muted)}.session-history{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}.session-history h2{margin:0}.session-history p{margin:6px 0 0;color:var(--muted)}.premium-request-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.premium-request-divider:before,.premium-request-divider:after{content:"";height:1px;flex:1;background:var(--line)}.premium-request-toggle{width:100%}.premium-request-form{display:grid;gap:12px;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#f7fdf8}.premium-request-form label{display:grid;gap:6px}.premium-request-form input{width:100%;padding:10px 12px;border:1px solid #bdd4c3;border-radius:10px;background:#fff;color:var(--ink)}.premium-request-form .primary{width:100%}.dashboard-switcher{position:relative}.dashboard-switcher-button{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:99px;padding:8px 12px;background:#f1faf3;color:var(--pine-dark);font-weight:800;cursor:pointer}.dashboard-switcher-button .dashboard-dot{width:8px;height:8px;border-radius:50%;background:#22c55e}.dashboard-switcher-menu{position:absolute;right:0;top:calc(100% + 9px);z-index:20;width:240px;padding:8px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 16px 36px rgba(16,42,27,.16)}.dashboard-switcher-menu a{display:block;padding:10px;border-radius:10px;color:var(--ink);text-decoration:none}.dashboard-switcher-menu a:hover,.dashboard-switcher-menu a.is-current{background:var(--mint)}.dashboard-switcher-menu small{display:block;color:var(--muted);font-size:.75rem}.dashboard-switcher-menu[hidden]{display:none!important}.primary,.secondary,.text-button,.dashboard-switcher-button,.feedback-button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}.primary:hover,.secondary:hover,.text-button:hover,.dashboard-switcher-button:hover,.feedback-button:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(20,83,45,.12)}.primary:active,.secondary:active,.text-button:active,.dashboard-switcher-button:active,.feedback-button:active{transform:translateY(1px)}.admin-export-panel{display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin-top:26px;padding:16px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8}.admin-export-panel h2{margin:2px 0 0}.admin-export-panel p{margin:3px 0 0;color:var(--muted)}.admin-export-panel .form-status{grid-column:1/-1}.admin-question-btn{margin-top:12px}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}@media(max-width:720px){.analytics-grid{grid-template-columns:repeat(2,1fr)}.vertex-overview-cards{grid-template-columns:1fr}.admin-export-panel{grid-template-columns:1fr}.admin-export-panel button{width:100%}}
   </style>
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app-shell learning-app-shell">
     <header class="topbar">
       <div class="brand-wrap">
         <button class="brand-button" id="appSwitcherButton" aria-expanded="false" aria-controls="appSwitcherMenu">
@@ -46,6 +49,13 @@
         <div><p class="eyebrow">Your math workspace</p><h1 id="dashboardTitle">Accelerated Geometry</h1><p id="dashboardDescription">Choose a concept and start practicing.</p></div>
         <img src="assets/vertex-mark.png" alt="" class="hero-mark">
       </section>
+      <div class="level-switch" role="tablist" aria-label="Math dashboard">
+        <button class="level-tab is-active" id="acceleratedGeometryTab" role="tab" aria-selected="true">Accelerated Geometry</button>
+      </div>
+      <div class="home-actions">
+        <button class="primary home-start-btn" id="enterPracticeBtn" type="button" disabled>Practice session <span aria-hidden="true">→</span></button>
+        <button class="secondary home-settings-btn" id="homeSettingsBtn" type="button">Choose modules &amp; settings</button>
+      </div>
       <section class="dashboard-analytics" aria-labelledby="analyticsTitle">
         <div class="dashboard-section-heading"><div><span class="home-overview-label">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div><small>Saved in this browser</small></div>
         <div class="analytics-grid">
@@ -76,7 +86,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
       <div class="modal-heading"><div><h2 id="feedbackTitle">Send feedback</h2><p>Ideas and module requests help shape Vertex.</p></div><button class="icon-button" id="feedbackClose" aria-label="Close feedback">×</button></div>
       <form id="feedbackForm">
-        <label>Feedback type<select id="feedbackType" name="feedback_type"><option value="general">General feedback or suggestion</option><option value="module_request">Request a new module</option><option value="feedback_system">Feedback about the feedback experience</option></select></label>
+        <label>Feedback type<select id="feedbackType" name="feedback_type"><option value="general">General feedback or suggestion</option><option value="bug">Report a bug</option><option value="ui_request">Request a UI change</option><option value="improvement">Suggest an improvement</option><option value="module_request">Request a new module</option><option value="feedback_system">Feedback about the feedback experience</option></select></label>
         <label id="requestedModuleField" hidden>Module you would like<input id="requestedModule" name="requested_module" maxlength="160" placeholder="For example: triangle congruence"></label>
         <label>Your feedback<textarea id="feedbackMessage" name="message" maxlength="2000" required placeholder="What should be improved?"></textarea></label>
         <label>Email <small>(optional, if you want a reply)</small><input id="feedbackEmail" name="email" type="email" maxlength="160" autocomplete="email"></label>
@@ -94,6 +104,7 @@
       <form id="premiumRequestForm" class="premium-request-form" hidden><label>Name<input id="premiumRequestName" autocomplete="name" required></label><label>Email<input id="premiumRequestEmail" type="email" autocomplete="email" required></label><button class="primary" type="submit">Send request</button><p class="form-status" id="premiumRequestStatus"></p></form>
     </section>
   </div>
+  <script src="app-shared.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
