@@ -8,77 +8,107 @@
   <title>Vertex — Accelerated Geometry</title>
   <link rel="icon" href="assets/vertex-mark.png" type="image/png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260915-curriculum">
   <link rel="stylesheet" href="parity.css">
   <link rel="stylesheet" href="app-modifiers.css">
   <link rel="stylesheet" href="style-shared.css">
   <style>[hidden]{display:none!important}</style>
-  <style>
-    .analytics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}.dashboard-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}.home-overview-label{display:block;color:var(--pine);font-size:.72rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.dashboard-section-heading small{color:var(--muted)}.analytics-card{min-height:112px;padding:14px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8;transition:transform .18s ease,box-shadow .18s ease}.analytics-card:hover,.vertex-overview-cards article:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(20,83,45,.12)}.analytics-card span{display:block;color:var(--muted);font-size:.7rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.analytics-card strong{display:block;margin:8px 0 2px;font-size:1.45rem}.analytics-card small{color:var(--muted)}.analytics-card-accuracy strong,.analytics-card-correct strong{color:#15803d}.analytics-card-streak strong,.analytics-card-best strong{color:#c2410c}.analytics-card-sessions strong{color:#2563eb}.vertex-overview-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}.vertex-overview-cards article{display:grid;gap:5px;padding:16px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8;transition:transform .18s ease,box-shadow .18s ease}.vertex-overview-cards strong{font-size:1.05rem}.vertex-overview-cards small{color:var(--muted)}.session-history{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}.session-history h2{margin:0}.session-history p{margin:6px 0 0;color:var(--muted)}.premium-request-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.premium-request-divider:before,.premium-request-divider:after{content:"";height:1px;flex:1;background:var(--line)}.premium-request-toggle{width:100%}.premium-request-form{display:grid;gap:12px;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#f7fdf8}.premium-request-form label{display:grid;gap:6px}.premium-request-form input{width:100%;padding:10px 12px;border:1px solid #bdd4c3;border-radius:10px;background:#fff;color:var(--ink)}.premium-request-form .primary{width:100%}.dashboard-switcher{position:relative}.dashboard-switcher-button{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:99px;padding:8px 12px;background:#f1faf3;color:var(--pine-dark);font-weight:800;cursor:pointer}.dashboard-switcher-button .dashboard-dot{width:8px;height:8px;border-radius:50%;background:#22c55e}.dashboard-switcher-menu{position:absolute;right:0;top:calc(100% + 9px);z-index:20;width:240px;padding:8px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 16px 36px rgba(16,42,27,.16)}.dashboard-switcher-menu a{display:block;padding:10px;border-radius:10px;color:var(--ink);text-decoration:none}.dashboard-switcher-menu a:hover,.dashboard-switcher-menu a.is-current{background:var(--mint)}.dashboard-switcher-menu small{display:block;color:var(--muted);font-size:.75rem}.dashboard-switcher-menu[hidden]{display:none!important}.primary,.secondary,.text-button,.dashboard-switcher-button,.feedback-button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}.primary:hover,.secondary:hover,.text-button:hover,.dashboard-switcher-button:hover,.feedback-button:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(20,83,45,.12)}.primary:active,.secondary:active,.text-button:active,.dashboard-switcher-button:active,.feedback-button:active{transform:translateY(1px)}.admin-export-panel{display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin-top:26px;padding:16px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8}.admin-export-panel h2{margin:2px 0 0}.admin-export-panel p{margin:3px 0 0;color:var(--muted)}.admin-export-panel .form-status{grid-column:1/-1}.admin-question-btn{margin-top:12px}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}@media(max-width:720px){.analytics-grid{grid-template-columns:repeat(2,1fr)}.vertex-overview-cards{grid-template-columns:1fr}.admin-export-panel{grid-template-columns:1fr}.admin-export-panel button{width:100%}}
-  </style>
 </head>
 <body>
   <div class="app-shell learning-app-shell">
     <header class="topbar">
       <div class="brand-wrap">
-        <button class="brand-button" id="appSwitcherButton" aria-expanded="false" aria-controls="appSwitcherMenu">
+        <a class="brand-button" id="appSwitcherButton" href="/" aria-label="Vertex home">
           <img src="assets/vertex-mark.png" alt="" class="brand-mark">
-          <span class="brand-copy"><strong>Vertex</strong><span id="headerDashboard">Accelerated Geometry</span></span>
-          <span class="chevron" aria-hidden="true">⌄</span>
-        </button>
-        <div class="app-switcher" id="appSwitcherMenu" hidden>
-          <p class="switcher-label">Learning apps</p>
-          <a class="switcher-app" href="https://clarospanish.vercel.app" data-app="claro">
-            <img src="https://clarospanish.vercel.app/assets/claro-mark-clean.png?v=20260912-2" alt="" class="switcher-mark">
-            <span><strong>Claro</strong><small>Spanish learning</small></span>
-          </a>
-          <a class="switcher-app is-current" href="https://vertexmath.vercel.app" data-app="vertex" aria-current="page">
-            <img src="assets/vertex-mark.png" alt="" class="switcher-mark">
-            <span><strong>Vertex</strong><small>Math learning</small></span><em>Current</em>
-          </a>
-        </div>
+          <span class="brand-copy"><strong>Vertex</strong><span>Accelerated Geometry</span></span>
+        </a>
       </div>
       <div class="top-actions">
-        <div class="dashboard-switcher"><button class="dashboard-switcher-button" id="dashboardSwitcherButton" type="button" aria-expanded="false" aria-controls="dashboardSwitcherMenu"><span class="dashboard-dot"></span>Geometry <span aria-hidden="true">⌄</span></button><div class="dashboard-switcher-menu" id="dashboardSwitcherMenu" hidden><a class="is-current" href="?dashboard=accelerated-geometry" aria-current="page">Accelerated Geometry<small>Current dashboard</small></a></div></div>
+        <span class="dashboard-chip"><span></span>Accelerated Geometry</span>
         <button class="text-button" id="premiumButton" type="button">Premium</button>
+        <button class="text-button" id="homeSettingsBtn" type="button">Modules</button>
       </div>
     </header>
 
     <main class="dashboard-card" id="dashboardRoot">
       <section class="hero">
-        <div><p class="eyebrow">Your math workspace</p><h1 id="dashboardTitle">Accelerated Geometry</h1><p id="dashboardDescription">Choose a concept and start practicing.</p></div>
+        <div><p class="eyebrow">Your math workspace</p><h1>Accelerated Geometry</h1><p>Practice the exact concepts, properties, postulates, theorems, and proof language used in class.</p></div>
         <img src="assets/vertex-mark.png" alt="" class="hero-mark">
       </section>
-      <div class="level-switch" role="tablist" aria-label="Math dashboard">
-        <button class="level-tab is-active" id="acceleratedGeometryTab" role="tab" aria-selected="true">Accelerated Geometry</button>
-      </div>
-      <div class="home-actions">
-        <button class="primary home-start-btn" id="enterPracticeBtn" type="button" disabled>Practice session <span aria-hidden="true">→</span></button>
-        <button class="secondary home-settings-btn" id="homeSettingsBtn" type="button">Choose modules &amp; settings</button>
-      </div>
+
+      <section class="selected-module" aria-labelledby="selectedModuleName">
+        <div><span class="eyebrow">Selected section</span><h2 id="selectedModuleName">1-1 Points, Lines, and Planes</h2><p id="selectedModuleSummary"></p></div>
+        <button class="primary home-start-btn" id="enterPracticeBtn" type="button">Start practice session →</button>
+      </section>
+
       <section class="dashboard-analytics" aria-labelledby="analyticsTitle">
-        <div class="dashboard-section-heading"><div><span class="home-overview-label">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div><small>Saved in this browser</small></div>
+        <div class="dashboard-section-heading"><div><span class="eyebrow">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div><small>Saved in this browser</small></div>
         <div class="analytics-grid">
-          <div class="analytics-card analytics-card-accuracy"><span>Accuracy</span><strong>0%</strong><small>all-time correct</small></div>
-          <div class="analytics-card analytics-card-correct"><span>Correct</span><strong>0</strong><small>of 0 answered</small></div>
-          <div class="analytics-card analytics-card-streak"><span>Current streak</span><strong>0</strong><small>correct in a row</small></div>
-          <div class="analytics-card analytics-card-best"><span>Best streak</span><strong>0</strong><small>personal best</small></div>
-          <div class="analytics-card analytics-card-sessions"><span>Sessions</span><strong>0</strong><small>completed sessions</small></div>
+          <div class="analytics-card analytics-card-accuracy"><span>Accuracy</span><strong id="allTimeAccuracy">0%</strong><small>all-time correct</small></div>
+          <div class="analytics-card analytics-card-correct"><span>Correct</span><strong id="allTimeCorrect">0</strong><small id="allTimeAnswered">of 0 answered</small></div>
+          <div class="analytics-card analytics-card-streak"><span>Current streak</span><strong id="allTimeStreak">0</strong><small>correct in a row</small></div>
+          <div class="analytics-card analytics-card-best"><span>Best streak</span><strong id="allTimeBest">0</strong><small>personal best</small></div>
+          <div class="analytics-card analytics-card-sessions"><span>Sessions</span><strong id="allTimeSessions">0</strong><small>completed sessions</small></div>
         </div>
       </section>
-      <section class="vertex-overview-cards" aria-label="Course overview"><article><span class="eyebrow">Ready to practice</span><strong>Accelerated Geometry</strong><small>Modules will appear here as they are added.</small></article><article><span class="eyebrow">Simple by default</span><strong>One concept at a time</strong><small>Your progress stays in this browser.</small></article></section>
+
       <section class="modules-section" aria-labelledby="modulesHeading">
-        <div class="section-heading"><div><p class="eyebrow">Course modules</p><h2 id="modulesHeading">Your learning path</h2></div><span id="moduleStatus" class="status-pill">Preparing</span><span id="moduleCount" hidden>0</span></div>
-        <div id="moduleList" class="module-list"></div>
+        <div class="section-heading"><div><p class="eyebrow">Course modules</p><h2 id="modulesHeading">Your learning path</h2></div><span class="status-pill"><span id="moduleCount">10</span> sections</span></div>
+        <div id="unitList" class="unit-list"></div>
       </section>
-      <details class="how-it-works"><summary>How Vertex will work</summary><p>Choose a module, practice one concept, and return when you’re ready.</p></details>
-      <section class="session-history" aria-labelledby="historyTitle"><p class="eyebrow">History</p><h2 id="historyTitle">Practice sessions</h2><p>Complete a session and it will appear here.</p><button class="secondary admin-question-btn" id="adminDeleteQuestionBtn" type="button" hidden>Queue current question for removal</button></section>
-      <section class="admin-export-panel" id="adminExportPanel" hidden><div><span class="eyebrow">Admin tools</span><h2>Question removal queue</h2><p id="adminQueueSummary">No questions selected.</p></div><button class="primary" id="adminExportBtn" type="button">Send selected questions</button><p class="form-status" id="adminExportStatus"></p></section>
+
+      <section class="session-history" aria-labelledby="historyTitle">
+        <p class="eyebrow">History</p><h2 id="historyTitle">Practice sessions</h2>
+        <div id="sessionHistory" class="history-list"></div>
+        <p id="sessionHistoryEmpty">Complete a session and it will appear here.</p>
+      </section>
+    </main>
+
+    <main class="practice-card" id="practiceRoot" hidden>
+      <header class="practice-header">
+        <div><p class="eyebrow">Practice session</p><h1 id="practiceModuleTitle">Section</h1><p id="practiceConcepts" class="concept-strip"></p></div>
+        <div class="practice-actions"><button class="secondary" id="moderationRequestBtn" type="button" hidden>Request permanent removal</button><button class="secondary" id="endSessionButton" type="button">End session</button></div>
+      </header>
+      <section class="session-stats" aria-label="Current session progress">
+        <div><span>Correct</span><strong id="sessionCorrect">0</strong></div>
+        <div><span>Answered</span><strong id="sessionAnswered">0</strong></div>
+        <div><span>Accuracy</span><strong id="sessionAccuracy">0%</strong></div>
+      </section>
+      <section class="question-card">
+        <span class="question-progress" id="questionProgress"></span>
+        <h2 id="questionPrompt"></h2>
+        <div id="answerArea"></div>
+        <div id="answerFeedback" class="answer-feedback" aria-live="polite"></div>
+        <button class="primary next-question" id="nextQuestionButton" type="button" hidden>Next question →</button>
+      </section>
     </main>
   </div>
 
-  <div class="modal-overlay" id="adminGateOverlay" hidden>
-    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="adminGateTitle"><div class="modal-heading"><div><h2 id="adminGateTitle">Admin access</h2><p>Enter the administrator password to continue.</p></div></div><form id="adminGateForm"><label>Admin password<input id="adminPasswordInput" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Enter admin</button><p class="form-status" id="adminGateStatus"></p></form></section>
+  <div class="modal-overlay" id="settingsOverlay" hidden>
+    <section class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-heading"><div><h2 id="settingsTitle">Modules and settings</h2><p>Choose the sections that can appear in practice.</p></div><button class="icon-button" id="settingsClose" aria-label="Close settings">×</button></div>
+      <label class="preference-toggle"><input id="prioritizeWeakQuestions" type="checkbox"><span><strong>Prioritize weaker questions</strong><small>Questions with lower accuracy appear earlier.</small></span></label>
+      <div id="settingsModuleList" class="settings-module-list"></div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="premiumOverlay" hidden>
+    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
+      <div class="modal-heading"><div><h2 id="premiumTitle">Premium access</h2><p>Premium, Moderator, and Admin all include the complete curriculum.</p></div><button class="icon-button" id="premiumClose" aria-label="Close premium access">×</button></div>
+      <div class="role-summary"><span>Current role</span><strong id="accessRole">Free</strong></div>
+      <p id="elevatedAccessNote" class="form-status" hidden>Moderator and Admin controls are available here when supported by the server.</p>
+      <form id="premiumForm"><label>Access password<input id="premiumPassword" type="password" autocomplete="current-password" required></label><div class="modal-actions"><button class="primary" type="submit">Unlock access</button><button class="secondary" id="lockAccessButton" type="button" hidden>Lock access</button></div><p class="form-status" id="premiumStatus">Passwords are verified securely by the server.</p></form>
+      <section class="moderation-panel" id="moderationPanel" hidden><div class="premium-request-divider"><span id="moderationPanelTitle">Moderation</span></div><p class="form-status">Review permanent-removal requests and their audit history.</p><div class="moderation-history" id="moderationHistory"></div><p class="form-status" id="moderationHistoryEmpty">No deletion requests yet.</p><p class="form-status" id="moderationStatus" aria-live="polite"></p></section>
+      <div class="premium-request-divider"><span>Need access?</span></div><button class="secondary premium-request-toggle" id="premiumRequestToggle" type="button">Request premium access</button>
+      <form id="premiumRequestForm" class="premium-request-form" hidden><label>Name<input id="premiumRequestName" autocomplete="name" required></label><label>Email<input id="premiumRequestEmail" type="email" autocomplete="email" required></label><button class="primary" type="submit">Send request</button><p class="form-status" id="premiumRequestStatus"></p></form>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="moderationRequestOverlay" hidden>
+    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="moderationRequestTitle">
+      <div class="modal-heading"><div><h2 id="moderationRequestTitle">Request permanent removal</h2><p id="moderationRequestItem">Current question</p></div><button class="icon-button" id="moderationRequestClose" aria-label="Close removal request">×</button></div>
+      <form id="moderationRequestForm"><label>Remove<select id="moderationItemType"><option value="question">Only this question</option><option value="question-type">This question type in this section</option></select></label><label>Reason<textarea id="moderationReason" maxlength="500" required placeholder="Briefly explain what is wrong with this question."></textarea></label><div class="modal-actions"><button class="secondary" id="moderationRequestCancel" type="button">Cancel</button><button class="primary" type="submit">Submit request</button></div><p class="form-status" id="moderationRequestStatus" aria-live="polite"></p></form>
+    </section>
   </div>
 
   <button class="feedback-button" id="feedbackButton" type="button">✦ Feedback</button>
@@ -91,20 +121,13 @@
         <label>Your feedback<textarea id="feedbackMessage" name="message" maxlength="2000" required placeholder="What should be improved?"></textarea></label>
         <label>Email <small>(optional, if you want a reply)</small><input id="feedbackEmail" name="email" type="email" maxlength="160" autocomplete="email"></label>
         <div class="modal-actions"><button class="secondary" type="button" id="feedbackCancel">Cancel</button><button class="primary" type="submit">Continue to feedback form</button></div>
-        <p class="form-status" id="feedbackStatus">Feedback delivery will be enabled when a Vertex form URL is configured.</p>
+        <p class="form-status" id="feedbackStatus">This opens the shared secure feedback form.</p>
       </form>
     </section>
   </div>
 
-  <div class="modal-overlay" id="premiumOverlay" hidden>
-    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
-      <div class="modal-heading"><div><h2 id="premiumTitle">Premium access</h2><p>Use your existing access password.</p></div><button class="icon-button" id="premiumClose" aria-label="Close premium access">×</button></div>
-      <form id="premiumForm"><label>Access password<input id="premiumPassword" type="password" autocomplete="current-password" required></label><div class="modal-actions"><button class="primary" type="submit">Unlock premium</button></div><p class="form-status" id="premiumStatus">Premium is verified securely when Vertex is deployed with its server configuration.</p></form>
-      <div class="premium-request-divider"><span>Need access?</span></div><button class="secondary premium-request-toggle" id="premiumRequestToggle" type="button">Request premium access</button>
-      <form id="premiumRequestForm" class="premium-request-form" hidden><label>Name<input id="premiumRequestName" autocomplete="name" required></label><label>Email<input id="premiumRequestEmail" type="email" autocomplete="email" required></label><button class="primary" type="submit">Send request</button><p class="form-status" id="premiumRequestStatus"></p></form>
-    </section>
-  </div>
   <script src="app-shared.js"></script>
-  <script src="app.js?v=20260913-forms"></script>
+  <script src="curriculum.js?v=20260915-1"></script>
+  <script src="app.js?v=20260915-curriculum"></script>
 </body>
 </html>

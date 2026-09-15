@@ -1,6 +1,6 @@
 # Vertex
 
-Vertex is the separate Accelerated Geometry learning app in the Claro product family. It intentionally starts with one dashboard and no content modules.
+Vertex is the separate Accelerated Geometry learning app in the Claro product family. It contains the currently published Canvas sections for Chapters 1–3, organized into collapsible course units with persistent practice sessions.
 
 ## Local preview
 
@@ -12,17 +12,18 @@ Deploy this folder as its own Vercel project and assign `vertexmath.vercel.app`.
 
 Set these server-only environment variables in Vertex:
 
-- `PREMIUM_PASSWORD_HASHES_JSON`: the PBKDF2-SHA256 credential records generated from the existing Claro credential set.
-- `PREMIUM_SESSION_SECRET`: a unique long random secret for Vertex session signing.
-- `PREMIUM_SESSION_TTL_SECONDS`: optional session duration; defaults to 30 days.
+- `ACCESS_CREDENTIALS_JSON`: PBKDF2-SHA256 records shaped as `{id,role,salt,iterations,hash}`. `role` is `premium`, `mod`, or `admin`.
+- `ACCESS_SESSION_SECRET`: a unique long random secret for Vertex session signing.
+- `ACCESS_SESSION_TTL_SECONDS`: optional session duration; defaults to 30 days.
+- `MODERATION_KV_REST_API_URL` and `MODERATION_KV_REST_API_TOKEN`: the REST KV storage used for deletion requests, audit history, and approved suppression records.
 
-The password records must be the same credential set as Claro so the passwords remain compatible. Sessions are deliberately issued per app domain; browser cookies cannot safely be shared across separate `*.vercel.app` domains.
+The password records may be the same credential set as Claro so the passwords remain compatible. Sessions are deliberately issued per app domain; browser cookies cannot safely be shared across separate `*.vercel.app` domains. Approved suppressions are visible to every learner, while request history is limited to Moderator/Admin sessions.
 
 Never put passwords, raw hashes, salts, or the session secret in client-side files. See `.env.example` for variable names only.
 
-## Adding modules later
+## Curriculum refreshes
 
-Add records to `MODULES` in `app.js` with a dashboard key, title, description, metadata, and numeric `order`. The renderer sorts by `order` and already handles an empty set. Add dashboards to `DASHBOARDS` when new classes are ready.
+The curated current curriculum is in `curriculum.js`. Its source manifest uses stable Canvas section/source identities and merge keys, so an import refresh updates existing sections rather than creating PDF-by-PDF duplicates. Keep teacher wording such as “Angle Addition Postulate” and “Congruent Supplements Theorem” exact.
 
 ## Feedback delivery
 
