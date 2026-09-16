@@ -192,5 +192,8 @@ body:has(.learning-app-shell){padding:0!important}
   .learning-app-shell .modal-overlay .modal-heading,.learning-app-shell .modal-overlay .modal-head{gap:10px!important;padding-bottom:11px!important}
   .learning-app-shell .modal-overlay .modal-heading h2,.learning-app-shell .modal-overlay .modal-head [id$="Title"]{font-size:1.2rem!important}
   .learning-app-shell .modal-overlay .modal-actions,.learning-app-shell .modal-overlay .feedback-form-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
-  .learning-app-shell .modal-overlay .modal-actions button,.learning-app-shell .modal-overlay .feedback-form-actions button{width:100%!important}
+.learning-app-shell .modal-overlay .modal-actions button,.learning-app-shell .modal-overlay .feedback-form-actions button{width:100%!important}
 }
+
+/* Keep every modal closed until its owning interaction opens it. */
+.modal-overlay[hidden]{display:none!important}
