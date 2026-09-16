@@ -1,2 +1,14 @@
-/* Vertex-only design/content modifiers. Shared geometry lives in parity.css. */
-:root{--brand:#166534;--brand-strong:#14532d;--brand-soft:#f1faf3;--surface-soft:#f7fdf8;--keyhint-bg:#f1faf3;--keyhint-border:#bde0c6}
+/* Vertex-only theme tokens. Shared Claro geometry and interaction remain unchanged. */
+:root{--brand:#166534;--brand-strong:#14532d;--brand-soft:#f1faf3;--primary:#166534;--primary-2:#14532d;--focus:#86efac;--keyhint-bg:#f1faf3;--keyhint-border:#bbf7d0;--bg:#f5faf6}
+body{background:radial-gradient(1200px 600px at 20% 0%,#ecfdf5 0%,transparent 60%),radial-gradient(1200px 600px at 80% 20%,#f0fdf4 0%,transparent 55%),var(--bg)}
+a{color:var(--brand)}
+.app-switcher-menu>a:hover,.app-switcher-menu>a.is-current{background:var(--brand-soft)}
+.app-switcher-menu em,.feedback-fab,.dashboard-switcher-button,#premiumBtn,#settingsBtn{color:var(--brand-strong)}
+.dashboard-switcher-button{background:var(--brand-soft)}
+.dashboard-dot{background:var(--brand)}
+.dashboard-switcher-option:hover,.dashboard-switcher-option.is-current{background:var(--brand-soft)}
+.analytics-card-sessions strong{color:var(--brand)}
+.feedback-fab{border-color:#bbf7d0}
+.premium-btn:hover,#settingsBtn:hover{background:var(--brand-soft)}
+.premium-btn.unlocked{color:var(--brand-strong)}
+.admin-export-panel{border-color:#bbf7d0;background:var(--brand-soft)}

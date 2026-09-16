@@ -1,110 +1,836 @@
-<!doctype html>
+<!DOCTYPE html>
+<!--
+Changelog: 2026-02-13
+- Added five modules: Days, Months, Seasons, Time, Colors (all enabled by default for new users).
+- Added modules object generators, stronger MCQ distractors, and two-stage reveal (hint -> full).
+- Added spaced-repetition item scores (0-5) with low-score weighted sampling.
+- Added keyboard refinements (global vs typing mode), IME composition-safe handling, and key-hint strip toggle.
+- Added resilient v2 persistence with debounced save + storage fallback:
+  key: spanish_app_v2_state
+- Added full export/import (settings + hidden + scores + module choices), reset-with-undo, and settings accordions.
+- Added responsive practice-only controls (horizontal scroll + mobile dropdown).
+- Added a11y improvements (sr-only helper text, deterministic settings focus, dialog semantics preserved).
+- Added startup and on-demand smoke checks via runAutomatedChecks().
+- Added Numbers lower/upper range controls, typed endpoint inputs, typed-spelling mode, and ordered practice.
+- Added Honors Vocab, premium-gated Mayo Madness submodules, and Rapid Fire sentence/conjugation modules.
+
+localStorage schema (key: spanish_app_v2_state):
+{
+  "version": 2,
+  "settings": { "modulesEnabled": "...", "mayoMadnessEnabled": true, "numbersMin": 1, "numbersMax": 1000, "numbersRequireTyping": false, "numbersSequential": false, "...": "existing + new toggles/choices" },
+  "hiddenItems": { "question-id": true },
+  "itemScores": { "question-id": 0..5 },
+  "moduleChoices": { "practiceMix": 0..100, "showKeyHintStrip": true|false, "newModulesAnswerMode": "spelling"|"mixed" },
+  "vocabChecksum": "fnv1a32-of-quizlet-block",
+  "userStats": { "id": { "attempts": 1, "correct": 1 } }
+}
+
+Manual test checklist:
+[ ] New modules appear in Settings and can be toggled.
+[ ] Numbers lower/upper sliders and typed endpoints normalize cleanly and update generated numbers.
+[ ] Numbers typed-spelling mode requires a correct answer before Next.
+[ ] Numbers order mode advances through the selected range and wraps.
+[ ] Space/Arrow behavior respects typing focus + IME composition.
+[ ] Two-stage reveal works (hint first, full reveal second).
+[ ] Low-scored items appear more often over repeated practice.
+[ ] Export/import round-trips hiddenItems/itemScores/settings/moduleChoices, including Numbers settings.
+[ ] Mayo Madness parent unlocks, submodules toggle independently, and Rapid Fire variants are accepted.
+[ ] Reset progress offers undo toast for 5 seconds.
+[ ] runAutomatedChecks() reports pass/fail in Settings and console.
+
+Developer note:
+- In DevTools Console you can run: runAutomatedChecks()
+-->
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#166534">
-  <meta name="application-name" content="Vertex">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vertex — Accelerated Geometry</title>
-  <link rel="icon" href="assets/vertex-mark.png" type="image/png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="parity.css">
-  <link rel="stylesheet" href="app-modifiers.css">
-  <link rel="stylesheet" href="style-shared.css">
-  <style>[hidden]{display:none!important}</style>
+  <meta name="theme-color" content="#166534" />
+  <meta name="application-name" content="Vertex" />
+  <link rel="icon" href="assets/vertex-mark.png?v=20260915-1" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/vertex-mark.png?v=20260915-1" />
+  <link rel="manifest" href="manifest.webmanifest?v=20260912-2" />
+  <link rel="stylesheet" href="style.css?v=20260804-4" />
+  <link rel="stylesheet" href="shared-ui.css" />
+  <link rel="stylesheet" href="app-modifiers.css" />
+  <link rel="stylesheet" href="style-shared.css" />
   <style>
-    .analytics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}.dashboard-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}.home-overview-label{display:block;color:var(--pine);font-size:.72rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.dashboard-section-heading small{color:var(--muted)}.analytics-card{min-height:112px;padding:14px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8;transition:transform .18s ease,box-shadow .18s ease}.analytics-card:hover,.vertex-overview-cards article:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(20,83,45,.12)}.analytics-card span{display:block;color:var(--muted);font-size:.7rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.analytics-card strong{display:block;margin:8px 0 2px;font-size:1.45rem}.analytics-card small{color:var(--muted)}.analytics-card-accuracy strong,.analytics-card-correct strong{color:#15803d}.analytics-card-streak strong,.analytics-card-best strong{color:#c2410c}.analytics-card-sessions strong{color:#2563eb}.vertex-overview-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}.vertex-overview-cards article{display:grid;gap:5px;padding:16px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8;transition:transform .18s ease,box-shadow .18s ease}.vertex-overview-cards strong{font-size:1.05rem}.vertex-overview-cards small{color:var(--muted)}.session-history{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}.session-history h2{margin:0}.session-history p{margin:6px 0 0;color:var(--muted)}.premium-request-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.premium-request-divider:before,.premium-request-divider:after{content:"";height:1px;flex:1;background:var(--line)}.premium-request-toggle{width:100%}.premium-request-form{display:grid;gap:12px;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#f7fdf8}.premium-request-form label{display:grid;gap:6px}.premium-request-form input{width:100%;padding:10px 12px;border:1px solid #bdd4c3;border-radius:10px;background:#fff;color:var(--ink)}.premium-request-form .primary{width:100%}.dashboard-switcher{position:relative}.dashboard-switcher-button{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:99px;padding:8px 12px;background:#f1faf3;color:var(--pine-dark);font-weight:800;cursor:pointer}.dashboard-switcher-button .dashboard-dot{width:8px;height:8px;border-radius:50%;background:#22c55e}.dashboard-switcher-menu{position:absolute;right:0;top:calc(100% + 9px);z-index:20;width:240px;padding:8px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 16px 36px rgba(16,42,27,.16)}.dashboard-switcher-menu a{display:block;padding:10px;border-radius:10px;color:var(--ink);text-decoration:none}.dashboard-switcher-menu a:hover,.dashboard-switcher-menu a.is-current{background:var(--mint)}.dashboard-switcher-menu small{display:block;color:var(--muted);font-size:.75rem}.dashboard-switcher-menu[hidden]{display:none!important}.primary,.secondary,.text-button,.dashboard-switcher-button,.feedback-button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}.primary:hover,.secondary:hover,.text-button:hover,.dashboard-switcher-button:hover,.feedback-button:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(20,83,45,.12)}.primary:active,.secondary:active,.text-button:active,.dashboard-switcher-button:active,.feedback-button:active{transform:translateY(1px)}.admin-export-panel{display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin-top:26px;padding:16px;border:1px solid #bde0c6;border-radius:16px;background:#f7fdf8}.admin-export-panel h2{margin:2px 0 0}.admin-export-panel p{margin:3px 0 0;color:var(--muted)}.admin-export-panel .form-status{grid-column:1/-1}.admin-question-btn{margin-top:12px}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}@media(max-width:720px){.analytics-grid{grid-template-columns:repeat(2,1fr)}.vertex-overview-cards{grid-template-columns:1fr}.admin-export-panel{grid-template-columns:1fr}.admin-export-panel button{width:100%}}
+    .brand-switcher-button{min-height:48px;padding:0 2px;line-height:1.1}.brand-switcher-button .brand-mark{width:42px;height:42px}.claro-brand-copy{display:grid;line-height:1.1;text-align:left}.brand-switcher-button #brandName{font-size:1.15rem}.brand-switcher-button #headerLevel{display:block;font-size:.77rem;color:var(--muted);font-weight:700}.brand-switcher-button .brand-separator{display:none}.claro-chevron{margin-left:3px;color:var(--muted);font-size:1.2rem;line-height:1;transform:translateY(-2px)}.modules-btn{width:auto!important;min-width:80px;padding:0 13px!important;font-size:.78rem!important;font-weight:900!important}.premium-btn{min-width:100px!important;height:48px!important;border:1px solid #d7e7db!important;border-radius:14px!important;background:#fff!important;color:#14532d!important;box-shadow:none!important}.premium-btn:hover{background:#f1faf3!important;box-shadow:0 10px 20px rgba(20,83,45,.12)!important}.premium-btn span:first-child{color:#14532d!important}.brand .subtitle[hidden]{display:none!important}
+  </style>
+  <style>
+    :root{--primary:#166534;--primary-2:#14532d;--brand:#166534;--brand-strong:#14532d;--brand-soft:#f1faf3;--keyhint-bg:#f1faf3;--keyhint-border:#bbf7d0;--focus:#86efac} body{background:radial-gradient(1200px 600px at 20% 0%,#ecfdf5 0%,transparent 60%),radial-gradient(1200px 600px at 80% 20%,#f0fdf4 0%,transparent 55%),#f5faf6} .app-switcher-menu>a:hover,.app-switcher-menu>a.is-current,.dashboard-switcher-option:hover,.dashboard-switcher-option.is-current{background:#f1faf3!important}.dashboard-switcher-button{background:#f1faf3!important;color:#14532d!important}.dashboard-dot{background:#166534!important}.feedback-fab{border-color:#bbf7d0!important;color:#14532d!important}
   </style>
 </head>
 <body>
-  <div class="app-shell learning-app-shell">
+  <div class="app learning-app-shell" id="appRoot">
     <header class="topbar">
-      <div class="brand-wrap">
-        <button class="brand-button" id="appSwitcherButton" aria-expanded="false" aria-controls="appSwitcherMenu">
-          <img src="assets/vertex-mark.png" alt="" class="brand-mark">
-          <span class="brand-copy"><strong>Vertex</strong><span id="headerDashboard">Accelerated Geometry</span></span>
-          <span class="chevron" aria-hidden="true">⌄</span>
-        </button>
-        <div class="app-switcher" id="appSwitcherMenu" hidden>
-          <p class="switcher-label">Learning apps</p>
-          <a class="switcher-app" href="https://clarospanish.vercel.app" data-app="claro">
-            <img src="https://clarospanish.vercel.app/assets/claro-mark-clean.png?v=20260912-2" alt="" class="switcher-mark">
-            <span><strong>Claro</strong><small>Spanish learning</small></span>
-          </a>
-          <a class="switcher-app is-current" href="https://vertexmath.vercel.app" data-app="vertex" aria-current="page">
-            <img src="assets/vertex-mark.png" alt="" class="switcher-mark">
-            <span><strong>Vertex</strong><small>Math learning</small></span><em>Current</em>
-          </a>
+      <div class="brand">
+        <div class="brand-switcher">
+          <button class="title brand-switcher-button" id="appSwitcherButton" type="button" aria-expanded="false" aria-controls="appSwitcherMenu"><img class="brand-mark" src="assets/claro-mark-clean.png?v=20260912-2" alt="" aria-hidden="true" /> <span class="claro-brand-copy"><strong id="brandName">Claro</strong><span id="headerLevel">Spanish 1</span></span><span class="claro-chevron" aria-hidden="true">⌄</span></button>
+          <div class="app-switcher-menu" id="appSwitcherMenu" hidden>
+            <p>Learning apps</p>
+            <a href="https://clarospanish.vercel.app" class="is-current" aria-current="page"><img src="assets/claro-mark-clean.png?v=20260912-2" alt="" /> <span>Claro<small>Spanish learning</small></span><em>Current</em></a>
+            <a href="https://vertexmath.vercel.app"><img src="https://vertexmath.vercel.app/assets/vertex-mark.png" alt="" /> <span>Vertex<small>Math learning</small></span></a>
+          </div>
         </div>
+        <div class="subtitle" id="subtitle" hidden>Build a daily Spanish habit with short, focused drills.</div>
       </div>
       <div class="top-actions">
-        <div class="dashboard-switcher"><button class="dashboard-switcher-button" id="dashboardSwitcherButton" type="button" aria-expanded="false" aria-controls="dashboardSwitcherMenu"><span class="dashboard-dot"></span>Geometry <span aria-hidden="true">⌄</span></button><div class="dashboard-switcher-menu" id="dashboardSwitcherMenu" hidden><a class="is-current" href="?dashboard=accelerated-geometry" aria-current="page">Accelerated Geometry<small>Current dashboard</small></a></div></div>
-        <button class="text-button" id="premiumButton" type="button">Premium</button>
+        <div class="dashboard-switcher">
+          <button class="dashboard-switcher-button" id="classSwitcherButton" type="button" aria-expanded="false" aria-controls="classSwitcherMenu"><span class="dashboard-dot" aria-hidden="true"></span><span id="classSwitcherLabel">Spanish 1</span><span aria-hidden="true">⌄</span></button>
+          <div class="dashboard-switcher-menu" id="classSwitcherMenu" hidden>
+            <button class="dashboard-switcher-option is-current" type="button" data-class="spanish1" aria-current="page">Spanish 1<small>Current dashboard</small></button>
+            <button class="dashboard-switcher-option" type="button" data-class="spanish2">Spanish 2 Honors<small>Advanced dashboard</small></button>
+          </div>
+        </div>
+        <span class="chip" id="activeModuleChip" title="Active module">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="activeModuleLabel">Numbers</span>
+          <span class="meta" id="activeModuleMeta"></span>
+        </span>
+        <button class="icon-btn premium-btn" id="premiumBtn" aria-label="Unlock Premium" title="Unlock Premium"><span class="premium-btn-label">Premium</span></button>
+        <button class="icon-btn modules-btn" id="settingsBtn" aria-label="Open modules and settings">Modules</button>
       </div>
     </header>
 
-    <main class="dashboard-card" id="dashboardRoot">
-      <section class="hero">
-        <div><p class="eyebrow">Your math workspace</p><h1 id="dashboardTitle">Accelerated Geometry</h1><p id="dashboardDescription">Choose a concept and start practicing.</p></div>
-        <img src="assets/vertex-mark.png" alt="" class="hero-mark">
-      </section>
-      <div class="level-switch" role="tablist" aria-label="Math dashboard">
-        <button class="level-tab is-active" id="acceleratedGeometryTab" role="tab" aria-selected="true">Accelerated Geometry</button>
+    <div class="banner" id="banner" role="status" aria-live="polite" style="display:none">
+      <div class="banner-text" id="bannerText"></div>
+      <div class="banner-actions">
+        <button class="btn small" id="bannerRestoreBtn">Restore hidden</button>
+        <button class="btn small ghost" id="bannerDismissBtn" aria-label="Dismiss banner">✕</button>
+      </div>
+    </div>
+
+    <main class="home-card card" id="homeCard">
+      <div class="home-hero">
+        <div>
+          <p class="eyebrow">Your practice space</p>
+          <h1>Practice Spanish</h1>
+          <p class="home-intro">Choose a level. Start practicing.</p>
+        </div>
+        <img class="home-mark" src="assets/claro-mark-clean.png?v=20260912-2" alt="" aria-hidden="true" />
+      </div>
+      <div class="level-switch" role="tablist" aria-label="Spanish level">
+        <button class="level-tab is-active" id="spanish1Tab" role="tab" aria-selected="true">Spanish 1</button>
+        <button class="level-tab" id="spanish2Tab" role="tab" aria-selected="false">Spanish 2 Honors</button>
       </div>
       <div class="home-actions">
-        <button class="primary home-start-btn" id="enterPracticeBtn" type="button" disabled>Practice session <span aria-hidden="true">→</span></button>
-        <button class="secondary home-settings-btn" id="homeSettingsBtn" type="button">Choose modules &amp; settings</button>
+        <button class="btn primary home-start-btn" id="enterPracticeBtn">Enter practice session <span aria-hidden="true">→</span></button>
+        <button class="btn home-settings-btn" id="homeSettingsBtn">Choose modules &amp; settings</button>
       </div>
-      <section class="dashboard-analytics" aria-labelledby="analyticsTitle">
-        <div class="dashboard-section-heading"><div><span class="home-overview-label">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div><small>Saved in this browser</small></div>
+      <section class="dashboard-analytics" id="dashboardAnalytics" aria-labelledby="analyticsTitle">
+        <div class="dashboard-section-heading">
+          <div><span class="home-overview-label">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div>
+          <small id="profileNote">Saved in this browser</small>
+        </div>
         <div class="analytics-grid">
-          <div class="analytics-card analytics-card-accuracy"><span>Accuracy</span><strong>0%</strong><small>all-time correct</small></div>
-          <div class="analytics-card analytics-card-correct"><span>Correct</span><strong>0</strong><small>of 0 answered</small></div>
-          <div class="analytics-card analytics-card-streak"><span>Current streak</span><strong>0</strong><small>correct in a row</small></div>
-          <div class="analytics-card analytics-card-best"><span>Best streak</span><strong>0</strong><small>personal best</small></div>
-          <div class="analytics-card analytics-card-sessions"><span>Sessions</span><strong>0</strong><small>completed sessions</small></div>
+          <div class="analytics-card analytics-card-accuracy"><span>Accuracy</span><strong id="allTimeAccuracy">0%</strong><small>all-time correct</small></div>
+          <div class="analytics-card analytics-card-correct"><span>Correct</span><strong id="allTimeCorrect">0</strong><small id="allTimeAnsweredLabel">of 0 answered</small></div>
+          <div class="analytics-card analytics-card-streak"><span>Current streak</span><strong id="allTimeCurrentStreak">0</strong><small>correct in a row</small></div>
+          <div class="analytics-card analytics-card-best"><span>Best streak</span><strong id="allTimeBestStreak">0</strong><small>personal best</small></div>
+          <div class="analytics-card analytics-card-sessions"><span>Sessions</span><strong id="allTimeSessions">0</strong><small>completed sessions</small></div>
         </div>
       </section>
-      <section class="vertex-overview-cards" aria-label="Course overview"><article><span class="eyebrow">Ready to practice</span><strong>Accelerated Geometry</strong><small>Modules will appear here as they are added.</small></article><article><span class="eyebrow">Simple by default</span><strong>One concept at a time</strong><small>Your progress stays in this browser.</small></article></section>
-      <section class="modules-section" aria-labelledby="modulesHeading">
-        <div class="section-heading"><div><p class="eyebrow">Course modules</p><h2 id="modulesHeading">Your learning path</h2></div><span id="moduleStatus" class="status-pill">Preparing</span><span id="moduleCount" hidden>0</span></div>
-        <div id="moduleList" class="module-list"></div>
+      <div class="home-overview level-panel" id="spanish1Panel" role="tabpanel">
+        <div class="home-overview-card">
+          <span class="home-overview-label">Ready to practice</span>
+          <strong id="homeModuleSummary">Numbers, Days, Months, Seasons, Time &amp; Colors</strong>
+          <small>Enabled topics are used when you choose All enabled modules.</small>
+        </div>
+        <div class="home-overview-card home-overview-card-muted">
+          <span class="home-overview-label">Simple by default</span>
+          <strong>One question at a time</strong>
+          <small>Your progress stays in this browser.</small>
+        </div>
+      </div>
+      <div class="spanish2-panel level-panel" id="spanish2Panel" role="tabpanel" hidden>
+        <div class="spanish2-icon" aria-hidden="true">✦</div>
+        <div>
+          <span class="home-overview-label">Spanish 2</span>
+          <h2>Spanish 2 Honors is ready.</h2>
+          <p>Past-tense, ordinal, and translation practice.</p>
+          <small class="summer-summary" id="spanish2ModuleSummary">No Summer Prep modules enabled yet</small>
+          <div class="summer-resources">
+            <a class="resource-link" href="https://quizlet.com/717244172/past-tense-times-flash-cards/?funnelUUID=5a5b427d-69c4-4a3b-a133-b0254b36035f" target="_blank" rel="noopener">Open the past-tense Quizlet ↗</a>
+            <a class="resource-link" href="https://studyspanish.com/" target="_blank" rel="noopener">Practice quizzes at StudySpanish ↗</a>
+            <a class="resource-link" href="assets/summer-prep/Spanish-2H-Summer-Assignment.pdf" target="_blank" rel="noopener">Open the full summer packet ↗</a>
+          </div>
+          <details class="summer-visuals">
+            <summary>Study sheets from the packet</summary>
+            <div class="summer-image-grid">
+              <img src="assets/summer-prep/packet-page-02.png" alt="Past-tense time expressions, packet page 2" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-03.png" alt="More past-tense time expressions, packet page 3" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-04.png" alt="Past-tense time expressions, packet page 4" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-05.png" alt="Irregular preterite verb table, packet page 5" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-06.png" alt="More irregular preterite verbs, packet page 6" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-07.png" alt="Dirty Dozen irregular past tense conjugations, packet page 7" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-08.png" alt="Preterite and imperfect conjugation endings, packet page 8" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-09.png" alt="Past tense comparison chart, packet page 9" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-10.png" alt="Irregular preterite rules, packet page 10" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-11.png" alt="Uses of the preterite, packet page 11" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-12.png" alt="Uses of the imperfect, packet page 12" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-13.png" alt="Common expressions with the preterite, packet page 13" loading="lazy" />
+              <img src="assets/summer-prep/packet-page-14.png" alt="Translation practice sentences, packet page 14" loading="lazy" />
+            </div>
+          </details>
+        </div>
+      </div>
+      <details class="home-help">
+        <summary>How it works</summary>
+        <p>Choose your modules in Settings, enter a session, answer at your pace, and use Next whenever you’re ready. You can change settings at any time.</p>
+      </details>
+      <section class="session-history" aria-labelledby="historyTitle">
+        <div class="dashboard-section-heading"><div><span class="home-overview-label">History</span><h2 id="historyTitle">Practice sessions</h2></div><small>Most recent first</small></div>
+        <div id="sessionHistory" class="session-history-list"></div>
+        <p id="sessionHistoryEmpty" class="session-history-empty">Complete a session and it will appear here.</p>
       </section>
-      <details class="how-it-works"><summary>How Vertex will work</summary><p>Choose a module, practice one concept, and return when you’re ready.</p></details>
-      <section class="session-history" aria-labelledby="historyTitle"><p class="eyebrow">History</p><h2 id="historyTitle">Practice sessions</h2><p>Complete a session and it will appear here.</p><button class="secondary admin-question-btn" id="adminDeleteQuestionBtn" type="button" hidden>Queue current question for removal</button></section>
-      <section class="admin-export-panel" id="adminExportPanel" hidden><div><span class="eyebrow">Admin tools</span><h2>Question removal queue</h2><p id="adminQueueSummary">No questions selected.</p></div><button class="primary" id="adminExportBtn" type="button">Send selected questions</button><p class="form-status" id="adminExportStatus"></p></section>
+      <section class="admin-export-panel" id="adminExportPanel" hidden>
+        <div><span class="home-overview-label">Admin tools</span><h2>Question removal queue</h2><p id="adminQueueSummary">No questions selected.</p></div>
+        <button class="btn primary" id="adminExportBtn" type="button">Send selected questions</button>
+        <p class="feedback neutral" id="adminExportStatus" aria-live="polite"></p>
+      </section>
     </main>
+
+    <main class="practice-card card" id="mainCard">
+      <div class="top-row" style="display:none" aria-hidden="true">
+        <div class="counts" id="countsRow"></div>
+        <div class="counts"><span class="muted">Data:</span> <code>localStorage</code></div>
+      </div>
+
+      <div class="practice-header">
+        <div>
+          <button class="back-home-btn" id="backHomeBtn" aria-label="Back to home">← Home</button>
+        </div>
+      </div>
+      <section class="session-stats" id="sessionStats" aria-label="Current session progress">
+        <div class="session-stat session-stat-correct"><span>Correct</span><strong id="sessionCorrect">0</strong></div>
+        <div class="session-stat session-stat-incorrect"><span>Incorrect</span><strong id="sessionIncorrect">0</strong></div>
+        <div class="session-stat"><span>Answered</span><strong id="sessionAnswered">0</strong></div>
+        <div class="session-stat session-stat-accent"><span>Accuracy</span><strong id="sessionAccuracy">0%</strong></div>
+        <div class="session-stat session-stat-streak"><span>Streak</span><strong id="sessionStreak">0</strong></div>
+        <button class="btn small end-session-btn" id="endSessionBtn">End session</button>
+      </section>
+
+      <div class="only-row-wrap">
+        <div class="filter-label">Practice focus</div>
+        <div class="only-row" id="practiceOnlyRow" aria-label="Practice-only buttons">
+          <button class="btn small" data-solo="numbers" id="soloNumbersBtn" aria-label="Practice only Numbers">Practice only Numbers</button>
+          <button class="btn small" data-solo="commands" id="soloCommandsBtn" aria-label="Practice only Command tone">Practice only Command tone</button>
+          <button class="btn small" data-solo="vocab" id="soloVocabBtn" aria-label="Practice only Honors Vocab">Practice only Honors Vocab</button>
+          <button class="btn small" data-solo="mayo_madness" id="soloMayoMadnessBtn" aria-label="Practice only Mayo Madness">Practice only Mayo Madness</button>
+          <button class="btn small" data-solo="mayo_madness_1" id="soloMayoMadness1Btn" aria-label="Practice only Mayo Madness Level 1 Vocab">Practice only Mayo Madness Level 1 Vocab</button>
+          <button class="btn small" data-solo="mayo_madness_2" id="soloMayoMadness2Btn" aria-label="Practice only Mayo Madness Level 2 Vocab">Practice only Mayo Madness Level 2 Vocab</button>
+          <button class="btn small" data-solo="rapid_translations_2" id="soloRapidTranslations2Btn" aria-label="Practice only Mayo Madness Level 2 Rapid Fire Translations">Practice only Mayo Madness Level 2 Rapid Fire Translations</button>
+          <button class="btn small" data-solo="rapid_regular_verbs" id="soloRapidRegularVerbsBtn" aria-label="Practice only Mayo Madness Level 2 Rapid Fire Regular Verb Conjugations">Practice only Mayo Madness Level 2 Rapid Fire Regular Verb Conjugations</button>
+          <button class="btn small" data-solo="rapid_irregular_verbs" id="soloRapidIrregularVerbsBtn" aria-label="Practice only Mayo Madness Level 2 Rapid Fire Irregular Verb Conjugations">Practice only Mayo Madness Level 2 Rapid Fire Irregular Verb Conjugations</button>
+          <button class="btn small" data-solo="mayo_madness_3_rapid_translations" id="soloMayoMadness3RapidTranslationsBtn" aria-label="Practice only Mayo Madness Level 3 Rapid Fire Translations">Practice only Mayo Madness Level 3: Rapid Fire Translations</button>
+          <button class="btn small" data-solo="reflexive" id="soloReflexiveBtn" aria-label="Practice only Reflexive">Practice only Reflexive</button>
+          <button class="btn small" data-solo="tenses" id="soloTensesBtn" aria-label="Practice only Tenses">Practice only Tenses</button>
+          <button class="btn small" data-solo="days" id="soloDaysBtn" aria-label="Practice only Days">Practice only Days</button>
+          <button class="btn small" data-solo="months" id="soloMonthsBtn" aria-label="Practice only Months">Practice only Months</button>
+          <button class="btn small" data-solo="seasons" id="soloSeasonsBtn" aria-label="Practice only Seasons">Practice only Seasons</button>
+          <button class="btn small" data-solo="time" id="soloTimeBtn" aria-label="Practice only Time">Practice only Time</button>
+          <button class="btn small" data-solo="colors" id="soloColorsBtn" aria-label="Practice only Colors">Practice only Colors</button>
+          <button class="btn small" data-solo="prices" id="soloPricesBtn" aria-label="Practice only Prices">Practice only Prices</button>
+          <button class="btn small" data-solo="weather" id="soloWeatherBtn" aria-label="Practice only Weather">Practice only Weather</button>
+          <button class="btn small" data-solo="clothing" id="soloClothingBtn" aria-label="Practice only Clothing">Practice only Clothing</button>
+          <button class="btn small" data-solo="foods" id="soloFoodsBtn" aria-label="Practice only Foods">Practice only Foods</button>
+          <button class="btn small" data-solo="present_progressive" id="soloPresentProgressiveBtn" aria-label="Practice only Present Progressive">Practice only Present Progressive</button>
+          <button class="btn small" data-solo="ser_estar" id="soloSerEstarBtn" aria-label="Practice only Ser Estar">Practice only Ser/Estar</button>
+          <button class="btn small" data-solo="gustar" id="soloGustarBtn" aria-label="Practice only Gustar">Practice only Gustar</button>
+          <button class="btn small" data-solo="dates" id="soloDatesBtn" aria-label="Practice only Dates">Practice only Dates</button>
+          <button class="btn small" data-solo="honors_ordinal_numbers" id="soloHonorsOrdinalBtn" aria-label="Practice only Ordinal Numbers">Practice only Ordinal Numbers</button>
+          <button class="btn small" data-solo="honors_test1_review" id="soloHonorsTest1Btn" aria-label="Practice only Test 1 Review">Practice only Test 1 Review</button>
+          <button class="btn small ghost" id="soloOffBtn" title="Return to random rotation across enabled modules" aria-label="All enabled modules">All enabled modules</button>
+        </div>
+        <div class="only-row-mobile" id="practiceOnlyMobile">
+          <label class="sr-only" for="soloSelect">Practice only module selector</label>
+          <select id="soloSelect" aria-label="Practice only module selector">
+            <option value="">All enabled modules</option>
+            <option value="numbers">Numbers</option>
+            <option value="commands">Command tone</option>
+            <option value="vocab">Honors Vocab</option>
+            <option value="mayo_madness">Mayo Madness</option>
+            <option value="mayo_madness_1">Mayo Madness Level 1 Vocab</option>
+            <option value="mayo_madness_2">Mayo Madness Level 2 Vocab</option>
+            <option value="rapid_translations_2">Mayo Madness Level 2 Rapid Fire Translations</option>
+            <option value="rapid_regular_verbs">Mayo Madness Level 2 Rapid Fire Regular Verb Conjugations</option>
+            <option value="rapid_irregular_verbs">Mayo Madness Level 2 Rapid Fire Irregular Verb Conjugations</option>
+            <option value="mayo_madness_3_rapid_translations">Mayo Madness Level 3: Rapid Fire Translations</option>
+            <option value="reflexive">Reflexive</option>
+            <option value="tenses">Tenses</option>
+            <option value="days">Days</option>
+            <option value="months">Months</option>
+            <option value="seasons">Seasons</option>
+            <option value="time">Time</option>
+            <option value="colors">Colors</option>
+            <option value="prices">Prices</option>
+            <option value="weather">Weather</option>
+            <option value="clothing">Clothing</option>
+            <option value="foods">Foods</option>
+            <option value="present_progressive">Present Progressive</option>
+            <option value="ser_estar">Ser / Estar</option>
+            <option value="gustar">Gustar</option>
+            <option value="dates">Dates</option>
+            <option value="honors_ordinal_numbers">Ordinal Numbers</option>
+            <option value="honors_test1_review">Test 1 Review</option>
+          </select>
+          <button class="btn small ghost" id="soloOffMobileBtn" aria-label="Use all enabled modules">All enabled modules</button>
+        </div>
+      </div>
+      <details class="help-details practice-shortcuts">
+        <summary>Keyboard shortcuts &amp; help <span class="summary-note">Press ? anytime</span></summary>
+        <div class="help-content">
+          <div class="key-hint-strip" id="keyHintStrip" aria-label="Global keyboard shortcuts">
+            <span><span class="key-pill">Space</span> Hint / reveal</span>
+            <span><span class="key-pill">→</span> Reveal / next</span>
+            <span><span class="key-pill">N</span> Next</span>
+            <span><span class="key-pill">P</span> Need practice</span>
+            <span><span class="key-pill">?</span> Toggle help</span>
+            <span><span class="key-pill">Esc</span> Close</span>
+          </div>
+          <p class="sr-only" id="shortcutHelpText">Shortcuts work when no text input is focused and IME composition is inactive. Buttons are always available too.</p>
+        </div>
+      </details>
+
+      <!-- Numbers section (range, ordered mode, and optional typed-spelling mode) -->
+      <section id="numbersSection">
+        <h2 id="numbersTitle">Random Number (1-1000)</h2>
+        <p class="lead" id="numbersLead">Reveal the Spanish spelling, or type it if typing mode is on.</p>
+
+        <div class="display" id="numberDisplay" aria-live="polite">?</div>
+        <div class="spanish" id="numberSpanish" aria-live="polite"></div>
+
+        <div id="numberTypingBlock" style="display:none">
+          <div class="input-row">
+            <input id="numberAnswerInput" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type the number in Spanish..." aria-label="Number spelling answer input" />
+          </div>
+          <div class="feedback neutral" id="numberFeedback" aria-live="polite"></div>
+        </div>
+
+        <div class="controls">
+          <button class="btn primary" id="revealBtn" aria-label="Reveal in Spanish">Reveal in Spanish</button>
+          <button class="btn primary" id="submitNumberBtn" aria-label="Submit number spelling" style="display:none">Submit</button>
+          <button class="btn" id="nextNumbersBtn" aria-label="Next practice item">Next</button>
+          <button class="btn warn" id="practiceBtn" aria-label="Need more practice">Need more practice</button>
+        </div>
+
+        <div class="practice-indicator" id="practiceIndicator" aria-hidden="false"></div>
+        <details class="help-details module-help">
+          <summary>Help for this exercise</summary>
+          <div class="help-content">
+            <div class="keys" id="numbersKeysHint">Space = hint/reveal · → = reveal/next · P = need practice</div>
+            <div class="hint" id="numbersHint">Numbers can use a custom range, typed spelling, or ordered practice. Change those in Settings.</div>
+            <button class="btn small" id="numbersGuideBtn" aria-label="How Spanish numbers work">How Spanish Numbers Work</button>
+          </div>
+        </details>
+      </section>
+
+      <!-- Generic QA section (Vocab / Mayo Madness / Commands / Reflexive / Tenses / extra modules) -->
+      <section id="qaSection" style="display:none">
+        <div class="qa-wrap">
+          <h2 id="qaTitle">Question</h2>
+          <p class="lead" id="qaPrompt"></p>
+
+          <!-- Multiple choice -->
+          <div id="mcqBlock" style="display:none">
+            <div class="mcq" id="mcqList" role="radiogroup" aria-label="Multiple choice options"></div>
+          </div>
+
+          <!-- Text answer -->
+          <div id="textBlock" style="display:none">
+            <div class="accent-toolbar" id="accentToolbar" aria-label="Accent insertion toolbar">
+              <button class="btn small" data-accent="á" aria-label="Insert á">á</button>
+              <button class="btn small" data-accent="é" aria-label="Insert é">é</button>
+              <button class="btn small" data-accent="í" aria-label="Insert í">í</button>
+              <button class="btn small" data-accent="ó" aria-label="Insert ó">ó</button>
+              <button class="btn small" data-accent="ú" aria-label="Insert ú">ú</button>
+              <button class="btn small" data-accent="ñ" aria-label="Insert ñ">ñ</button>
+              <button class="btn small" data-accent="ü" aria-label="Insert ü">ü</button>
+            </div>
+
+            <div class="input-row">
+              <input id="answerInput" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Type your answer in Spanish…" aria-label="Answer input" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" id="submitBtn" aria-label="Submit answer">Submit</button>
+            <button class="btn" id="nextQBtn" aria-label="Next practice item">Next</button>
+          </div>
+
+          <div class="feedback neutral" id="feedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <div class="never-row">
+        <button class="btn small ghost" id="neverBtn" aria-label="Never show this question again">🙈 Hide this question</button>
+        <button class="btn small admin-question-btn" id="adminDeleteQuestionBtn" type="button" hidden>Remove this question from production</button>
+      </div>
+    </main>
+
+    <div class="footer">
+      Tip: Use <strong>🙈</strong> to hide a question forever (until restored). Everything is stored only in your browser.
+    </div>
   </div>
 
-  <div class="modal-overlay" id="adminGateOverlay" hidden>
-    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="adminGateTitle"><div class="modal-heading"><div><h2 id="adminGateTitle">Admin access</h2><p>Enter the administrator password to continue.</p></div></div><form id="adminGateForm"><label>Admin password<input id="adminPasswordInput" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Enter admin</button><p class="form-status" id="adminGateStatus"></p></form></section>
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div style="font-weight:900; font-size:1.05rem" id="settingsTitle">Settings</div>
+          <div class="muted small" id="settingsIntro">Spanish 1 modules. Everything else can stay on its default.</div>
+        </div>
+        <button class="icon-btn" id="settingsCloseBtn" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="settings-quick-toggle toggle">
+        <div>
+          <div class="label">Review weaker questions first</div>
+          <div class="desc">Prioritizes questions you miss while still cycling through the full set.</div>
+        </div>
+        <label><input type="checkbox" id="prioritizeWeakQuestions" aria-label="Prioritize weaker questions" /><span class="switch" aria-hidden="true"></span></label>
+      </div>
+
+      <details class="settings-accordion" id="moduleSettingsSection" open>
+        <summary>Modules</summary>
+        <div class="accordion-inner">
+          <div class="toggle">
+            <div><div class="label">Numbers</div><div class="desc">Practice Spanish number spelling in a chosen range.</div></div>
+            <label><input type="checkbox" id="toggle_numbers" aria-label="Toggle numbers module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Command tone</div><div class="desc">Usted & nosotros commands + pronoun placement.</div></div>
+            <label><input type="checkbox" id="toggle_commands" aria-label="Toggle command module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Honors Vocab</div><div class="desc">English → Spanish typing (accents optional).</div></div>
+            <label><input type="checkbox" id="toggle_vocab" aria-label="Toggle vocab module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <details class="settings-accordion mayo-madness-panel" id="mayoMadnessDetails">
+            <summary>
+              <span>Mayo Madness</span>
+              <label class="summary-toggle" id="mayoMadnessParentToggleLabel"><span>Enabled</span><input type="checkbox" id="toggle_mayo_madness" aria-label="Toggle Mayo Madness parent module" /><span class="switch" aria-hidden="true"></span></label>
+            </summary>
+            <div class="accordion-inner">
+              <div class="locked-note" id="mayoLockedNote">Premium locked. Click ★ Premium Access to unlock Mayo Madness for this session.</div>
+              <div class="mayo-submodules" id="mayoSubmoduleList">
+                <div class="toggle">
+                  <div><div class="label">Mayo Madness Level 1 Vocab</div><div class="desc">Classroom objects and people vocabulary.</div></div>
+                  <label><input type="checkbox" id="toggle_mayo_madness_1" aria-label="Toggle Mayo Madness Level 1 Vocab module" /><span class="switch" aria-hidden="true"></span></label>
+                </div>
+                <div class="toggle">
+                  <div><div class="label">Mayo Madness Level 2 Vocab</div><div class="desc">More classroom vocabulary with slash-answer variants.</div></div>
+                  <label><input type="checkbox" id="toggle_mayo_madness_2" aria-label="Toggle Mayo Madness Level 2 Vocab module" /><span class="switch" aria-hidden="true"></span></label>
+                </div>
+                <div class="toggle">
+                  <div><div class="label">Mayo Madness Level 2 Rapid Fire Translations</div><div class="desc">Full-sentence English to Spanish rapid-fire translations.</div></div>
+                  <label><input type="checkbox" id="toggle_rapid_translations_2" aria-label="Toggle Mayo Madness Level 2 Rapid Fire Translations module" /><span class="switch" aria-hidden="true"></span></label>
+                </div>
+                <div class="toggle">
+                  <div><div class="label">Mayo Madness Level 2 Rapid Fire Regular Verb Conjugations</div><div class="desc">Quick present-tense nosotros regular verbs.</div></div>
+                  <label><input type="checkbox" id="toggle_rapid_regular_verbs" aria-label="Toggle Mayo Madness Level 2 Rapid Fire Regular Verb Conjugations module" /><span class="switch" aria-hidden="true"></span></label>
+                </div>
+                <div class="toggle">
+                  <div><div class="label">Mayo Madness Level 2 Rapid Fire Irregular Verb Conjugations</div><div class="desc">Quick present-tense irregular forms and common variants.</div></div>
+                  <label><input type="checkbox" id="toggle_rapid_irregular_verbs" aria-label="Toggle Mayo Madness Level 2 Rapid Fire Irregular Verb Conjugations module" /><span class="switch" aria-hidden="true"></span></label>
+                </div>
+                <div class="toggle">
+                  <div><div class="label">Mayo Madness Level 3: Rapid Fire Translations</div><div class="desc">Sentence and past-tense rapid-fire translations with common variants.</div></div>
+                  <label><input type="checkbox" id="toggle_mayo_madness_3_rapid_translations" aria-label="Toggle Mayo Madness Level 3 Rapid Fire Translations module" /><span class="switch" aria-hidden="true"></span></label>
+                </div>
+              </div>
+            </div>
+          </details>
+          <div class="toggle">
+            <div><div class="label">Reflexive verbs</div><div class="desc">Present tense only (accepts <em>se llama</em> or <em>llama</em>).</div></div>
+            <label><input type="checkbox" id="toggle_reflexive" aria-label="Toggle reflexive module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Tenses</div><div class="desc">Present / Preterite / Imperfect conjugation practice.</div></div>
+            <label><input type="checkbox" id="toggle_tenses" aria-label="Toggle tenses module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Days</div><div class="desc">Weekday recognition and translation practice.</div></div>
+            <label><input type="checkbox" id="toggle_days" aria-label="Toggle days module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Months</div><div class="desc">Month names and spelling practice.</div></div>
+            <label><input type="checkbox" id="toggle_months" aria-label="Toggle months module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Seasons</div><div class="desc">Core season vocabulary drills.</div></div>
+            <label><input type="checkbox" id="toggle_seasons" aria-label="Toggle seasons module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Time</div><div class="desc">Clock phrases, numeric inputs, and normalization-aware matching.</div></div>
+            <label><input type="checkbox" id="toggle_time" aria-label="Toggle time module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Colors</div><div class="desc">Color vocabulary with confusable distractors.</div></div>
+            <label><input type="checkbox" id="toggle_colors" aria-label="Toggle colors module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Prices</div><div class="desc">Write currency amounts in Spanish words.</div></div>
+            <label><input type="checkbox" id="toggle_prices" aria-label="Toggle prices module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Weather</div><div class="desc">Translate weather expressions to Spanish.</div></div>
+            <label><input type="checkbox" id="toggle_weather" aria-label="Toggle weather module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Clothing</div><div class="desc">Basic clothing vocabulary (English to Spanish).</div></div>
+            <label><input type="checkbox" id="toggle_clothing" aria-label="Toggle clothing module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Foods</div><div class="desc">Basic foods vocabulary (English to Spanish).</div></div>
+            <label><input type="checkbox" id="toggle_foods" aria-label="Toggle foods module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Present Progressive</div><div class="desc">Practice estar + gerund forms (including common irregular gerunds).</div></div>
+            <label><input type="checkbox" id="toggle_present_progressive" aria-label="Toggle present progressive module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Ser / Estar</div><div class="desc">Sentence-based ser/estar decision + conjugation practice.</div></div>
+            <label><input type="checkbox" id="toggle_ser_estar" aria-label="Toggle ser estar module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Gustar</div><div class="desc">Indirect object pronouns and gusta/gustan agreement.</div></div>
+            <label><input type="checkbox" id="toggle_gustar" aria-label="Toggle gustar module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Dates</div><div class="desc">Write full Spanish dates (no shorthand).</div></div>
+            <label><input type="checkbox" id="toggle_dates" aria-label="Toggle dates module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-accordion summer-prep-settings" id="summerPrepSettings">
+        <summary>Spanish 2 Honors <span class="summary-note">Spanish 2</span></summary>
+        <div class="accordion-inner">
+          <p class="settings-section-intro">Past-tense preparation from your Spanish 2 Honors summer packet.</p>
+          <div class="toggle">
+            <div><div class="label">Ordinal Numbers</div><div class="desc">First, second, third, and beyond — ordinal numbers, gender agreement, and real sentence practice.</div></div>
+            <label><input type="checkbox" id="toggle_honors_ordinal_numbers" aria-label="Toggle Ordinal Numbers module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Test 1 Review</div><div class="desc">Preterite, imperfect, past-tense vocabulary, tense choice, and verb translation.</div></div>
+            <label><input type="checkbox" id="toggle_honors_test1_review" aria-label="Toggle Test 1 Review module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Past-tense time words</div><div class="desc">Ayer, siempre, de repente, and other time signals.</div></div>
+            <label><input type="checkbox" id="toggle_summer_time_words" aria-label="Toggle past-tense time words module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Preterite forms</div><div class="desc">Regular preterite endings, translations, and conjugation.</div></div>
+            <label><input type="checkbox" id="toggle_summer_preterite" aria-label="Toggle preterite forms module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Imperfect forms</div><div class="desc">Regular imperfect endings and habitual past actions.</div></div>
+            <label><input type="checkbox" id="toggle_summer_imperfect" aria-label="Toggle imperfect forms module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Irregular preterite</div><div class="desc">The packet’s irregular verbs and spelling-change forms.</div></div>
+            <label><input type="checkbox" id="toggle_summer_irregular_preterite" aria-label="Toggle irregular preterite module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Irregular imperfect</div><div class="desc">The three imperfect exceptions: ser, ir, and ver.</div></div>
+            <label><input type="checkbox" id="toggle_summer_irregular_imperfect" aria-label="Toggle irregular imperfect module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Preterite or imperfect?</div><div class="desc">Choose the tense from context and time clues.</div></div>
+            <label><input type="checkbox" id="toggle_summer_tense_choice" aria-label="Toggle preterite or imperfect module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+          <div class="toggle">
+            <div><div class="label">Summer translation challenge</div><div class="desc">Translate the packet’s 15 practice sentences.</div></div>
+            <label><input type="checkbox" id="toggle_summer_translations" aria-label="Toggle summer translation challenge module" /><span class="switch" aria-hidden="true"></span></label>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-accordion" id="practiceBehaviorSettings">
+        <summary>Practice Behavior <span class="summary-note">Optional</span></summary>
+        <div class="accordion-inner">
+          <h3>Tenses included (for the Tenses module)</h3>
+          <div class="row">
+            <label class="btn small ghost"><input type="checkbox" id="tense_present" aria-label="Toggle present tense" />&nbsp;Present</label>
+            <label class="btn small ghost"><input type="checkbox" id="tense_preterite" aria-label="Toggle preterite tense" />&nbsp;Preterite</label>
+            <label class="btn small ghost"><input type="checkbox" id="tense_imperfect" aria-label="Toggle imperfect tense" />&nbsp;Imperfect</label>
+          </div>
+          <div class="row">
+            <label class="btn small ghost"><input type="checkbox" id="tense_irregular_only" aria-label="Only irregular verbs in tenses module" />&nbsp;Only irregular verbs</label>
+          </div>
+          <p class="small muted">If you enable the Tenses module but select no tenses, Present will be re-enabled automatically.</p>
+          <h3>Numbers</h3>
+          <div class="row number-range-control">
+            <label for="numbersMinRange">Range: <output id="numbersMinValue">1</output>-<output id="numbersMaxValue">1000</output></label>
+            <div class="number-range-end">
+              <span>Lower</span>
+              <input type="range" id="numbersMinRange" min="1" max="1000" value="1" aria-label="Numbers range lower limit slider" />
+              <input type="number" id="numbersMinInput" min="1" max="1000" value="1" inputmode="numeric" aria-label="Numbers range lower limit" />
+            </div>
+            <div class="number-range-end">
+              <span>Upper</span>
+              <input type="range" id="numbersMaxRange" min="1" max="1000" value="1000" aria-label="Numbers range upper limit slider" />
+              <input type="number" id="numbersMaxInput" min="1" max="1000" value="1000" inputmode="numeric" aria-label="Numbers range upper limit" />
+            </div>
+          </div>
+          <div class="row">
+            <label class="btn small ghost"><input type="checkbox" id="numbersRequireTyping" aria-label="Require typed spelling for numbers" />&nbsp;Type and spell the number</label>
+            <label class="btn small ghost"><input type="checkbox" id="numbersSequential" aria-label="Practice numbers in order" />&nbsp;Go in order</label>
+          </div>
+          <p class="small muted">Use the sliders or type exact endpoints. If the endpoints cross, the app practices the normalized range between them.</p>
+          <h3>Vocabulary</h3>
+          <div class="row">
+            <label class="btn small ghost"><input type="radio" name="vocabMode" value="weighted" id="vocab_weighted" aria-label="Recommended vocabulary mix" />&nbsp;Recommended mix</label>
+            <label class="btn small ghost"><input type="radio" name="vocabMode" value="uniform" id="vocab_uniform" aria-label="Even vocabulary mix" />&nbsp;Even mix</label>
+          </div>
+          <h3>Topic balance</h3>
+          <div class="row">
+            <label for="practiceMixRange">Bias</label>
+            <input type="range" id="practiceMixRange" min="0" max="100" value="50" aria-label="Practice mix bias slider" />
+            <output id="practiceMixValue">50</output>
+          </div>
+          <h3>Answer style</h3>
+          <div class="row">
+            <label class="btn small ghost"><input type="radio" name="newModulesAnswerMode" value="spelling" id="newModulesMode_spelling" aria-label="Spelling only mode for new modules" />&nbsp;Spelling only (default)</label>
+            <label class="btn small ghost"><input type="radio" name="newModulesAnswerMode" value="mixed" id="newModulesMode_mixed" aria-label="Mixed mode for new modules" />&nbsp;Mixed (spelling + multiple choice)</label>
+          </div>
+          <p class="small muted">Applies only to Days, Months, Seasons, Time, and Colors. Honors Vocab, Mayo Madness, Rapid Fire, and newer text modules stay spelling-based.</p>
+        </div>
+      </details>
+
+      <details class="settings-accordion">
+        <summary>Keyboard &amp; Help <span class="summary-note">Optional</span></summary>
+        <div class="accordion-inner">
+          <div class="row">
+            <label class="btn small ghost"><input type="checkbox" id="toggleKeyHintStrip" aria-label="Show key hint strip" />&nbsp;Show key-hint strip</label>
+          </div>
+          <p class="small muted">Space is global hint/reveal when text input is not focused. Enter submits text answers, including typed Numbers mode.</p>
+        </div>
+      </details>
+
+      <details class="settings-accordion">
+        <summary>Hidden Questions <span class="summary-note">Optional</span></summary>
+        <div class="accordion-inner">
+          <div class="row">
+            <button class="btn" id="manageHiddenBtn" aria-label="Manage hidden questions">Manage hidden questions…</button>
+            <div class="muted small" id="hiddenCountLabel"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-accordion">
+        <summary>Export / Import / Reset <span class="summary-note">Advanced</span></summary>
+        <div class="accordion-inner">
+          <div class="row">
+            <button class="btn" id="exportAllBtn" aria-label="Export user data">Export User Data (JSON)</button>
+            <button class="btn" id="importAllBtn" aria-label="Import user data">Import User Data (JSON)</button>
+            <input type="file" id="importAllFile" accept="application/json" style="display:none" />
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn danger" id="resetBtn" aria-label="Reset progress">Reset progress</button>
+          </div>
+          <p class="small muted">Reset clears this app’s local data key only; undo remains available for 5 seconds.</p>
+        </div>
+      </details>
+
+      <details class="settings-accordion">
+        <summary>Developer Checks <span class="summary-note">Advanced</span></summary>
+        <div class="accordion-inner">
+          <div class="row">
+            <label class="btn small ghost"><input type="checkbox" id="toggleDebugMode" aria-label="Enable app debug mode" />&nbsp;Verbose debug logs</label>
+            <button class="btn" id="runChecksBtn" aria-label="Run automated checks">Run automated checks</button>
+          </div>
+          <div class="feedback neutral" id="checksOutput" aria-live="polite">Automated checks not run yet.</div>
+        </div>
+      </details>
+    </div>
   </div>
 
-  <button class="feedback-button" id="feedbackButton" type="button">✦ Feedback</button>
-  <div class="modal-overlay" id="feedbackOverlay" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
-      <div class="modal-heading"><div><h2 id="feedbackTitle">Send feedback</h2><p>Ideas and module requests help shape Vertex.</p></div><button class="icon-button" id="feedbackClose" aria-label="Close feedback">×</button></div>
-      <form id="feedbackForm">
-        <label>Feedback type<select id="feedbackType" name="feedback_type"><option value="general">General feedback or suggestion</option><option value="bug">Report a bug</option><option value="ui_request">Request a UI change</option><option value="improvement">Suggest an improvement</option><option value="module_request">Request a new module</option><option value="feedback_system">Feedback about the feedback experience</option></select></label>
-        <label id="requestedModuleField" hidden>Module you would like<input id="requestedModule" name="requested_module" maxlength="160" placeholder="For example: triangle congruence"></label>
-        <label>Your feedback<textarea id="feedbackMessage" name="message" maxlength="2000" required placeholder="What should be improved?"></textarea></label>
-        <label>Email <small>(optional, if you want a reply)</small><input id="feedbackEmail" name="email" type="email" maxlength="160" autocomplete="email"></label>
-        <div class="modal-actions"><button class="secondary" type="button" id="feedbackCancel">Cancel</button><button class="primary" type="submit">Continue to feedback form</button></div>
-        <p class="form-status" id="feedbackStatus">Feedback delivery will be enabled when a Vertex form URL is configured.</p>
+  <div class="modal-overlay admin-gate-overlay" id="adminGateOverlay" role="dialog" aria-modal="true" aria-labelledby="adminGateTitle" style="display:none">
+    <div class="modal compact admin-gate-modal">
+      <div class="modal-head"><div><div style="font-weight:900;font-size:1.05rem" id="adminGateTitle">Admin access</div><div class="muted small">Enter the administrator password to continue.</div></div></div>
+      <form id="adminGateForm"><label class="premium-field" for="adminPasswordInput"><span>Admin password</span><input id="adminPasswordInput" type="password" autocomplete="current-password" required /></label><button class="btn primary" type="submit">Enter admin</button><div class="feedback bad" id="adminGateStatus" aria-live="polite"></div></form>
+    </div>
+  </div>
+
+  <!-- PREMIUM ACCESS MODAL -->
+  <div class="modal-overlay" id="premiumOverlay" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
+    <div class="modal compact claro-premium-modal">
+      <div class="modal-heading"><div><h2 id="premiumTitle">Premium access</h2><p>Use your existing access password.</p></div><button class="icon-button" id="premiumCloseBtn" aria-label="Close premium access">×</button></div>
+      <div class="premium-form">
+        <label class="premium-field" for="premiumPasswordInput"><span>Access password</span><input id="premiumPasswordInput" type="password" autocomplete="current-password" required placeholder="Enter password" aria-label="Premium password" /></label>
+        <div class="modal-actions"><button class="btn primary" id="premiumSubmitBtn" aria-label="Unlock premium access">Unlock premium</button></div>
+        <div class="feedback neutral" id="premiumFeedback" aria-live="polite">Premium is verified securely when Claro is deployed with its server configuration.</div>
+      </div>
+      <div class="premium-request-divider"><span>Need access?</span></div>
+      <button class="btn premium-request-toggle" id="premiumRequestToggle" type="button">Request premium access</button>
+      <form class="premium-request-form" id="premiumRequestForm" action="#" method="post" hidden>
+        <input type="hidden" name="form_type" value="premium access request" />
+        <p class="small muted">Send a request and we’ll discuss access by email.</p>
+        <label class="premium-field" for="premiumRequestName"><span>Name</span><input id="premiumRequestName" name="name" type="text" autocomplete="name" required /></label>
+        <label class="premium-field" for="premiumRequestEmail"><span>Email</span><input id="premiumRequestEmail" name="email" type="email" autocomplete="email" required /></label>
+        <input type="hidden" name="_subject" value="Claro premium access request" />
+        <button class="btn primary" id="premiumRequestSubmit" type="submit">Send request</button>
+        <div class="feedback neutral" id="premiumRequestFeedback" aria-live="polite"></div>
+      </form>
+    </div>
+  </div>
+
+  <button class="feedback-fab" id="feedbackBtn" aria-label="Send feedback" title="Send feedback">
+    <span aria-hidden="true">✦</span><span>Feedback</span>
+  </button>
+
+  <div class="modal-overlay" id="feedbackOverlay" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+    <section class="modal feedback-modal">
+      <div class="modal-heading"><div><h2 id="feedbackTitle">Send feedback</h2><p>Ideas and module requests help shape Claro.</p></div><button class="icon-button" id="feedbackCloseBtn" aria-label="Close feedback">×</button></div>
+      <form id="feedbackForm" class="feedback-form" action="#" method="post">
+        <label class="feedback-field" for="feedbackType">
+          <span>What kind of feedback is this?</span>
+          <select id="feedbackType" name="feedback_type">
+            <option value="general">General feedback or suggestion</option>
+            <option value="bug">Report a bug</option>
+            <option value="ui_request">Request a UI change</option>
+            <option value="improvement">Suggest an improvement</option>
+            <option value="module_request">Request a new module</option>
+            <option value="feedback_system">Feedback about the feedback experience</option>
+          </select>
+        </label>
+        <label class="feedback-field" for="feedbackModuleRequest" id="feedbackModuleRequestField" hidden>
+          <span>Module you would like</span>
+          <input id="feedbackModuleRequest" name="requested_module" maxlength="160" placeholder="For example: travel vocabulary or imperfect tense review" />
+        </label>
+        <label class="feedback-field" for="feedbackMessage">
+          <span>Your feedback</span>
+          <textarea id="feedbackMessage" name="message" maxlength="2000" required placeholder="What should be improved?"></textarea>
+        </label>
+        <label class="feedback-field" for="feedbackEmail">
+          <span>Email <small>(optional, if you want a reply)</small></span>
+          <input id="feedbackEmail" name="email" type="email" maxlength="160" autocomplete="email" placeholder="you@example.com" />
+        </label>
+        <label class="feedback-trap" aria-hidden="true">Leave this blank<input id="feedbackWebsite" name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+        <div class="modal-actions feedback-form-actions">
+          <button class="btn ghost" type="button" id="feedbackCancelBtn">Cancel</button>
+          <button class="btn primary" type="submit" id="feedbackSubmitBtn">Send feedback</button>
+        </div>
+        <div class="feedback neutral" id="feedbackStatus" aria-live="polite">This opens a secure Tally form.</div>
       </form>
     </section>
   </div>
 
-  <div class="modal-overlay" id="premiumOverlay" hidden>
-    <section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
-      <div class="modal-heading"><div><h2 id="premiumTitle">Premium access</h2><p>Use your existing access password.</p></div><button class="icon-button" id="premiumClose" aria-label="Close premium access">×</button></div>
-      <form id="premiumForm"><label>Access password<input id="premiumPassword" type="password" autocomplete="current-password" required></label><div class="modal-actions"><button class="primary" type="submit">Unlock premium</button></div><p class="form-status" id="premiumStatus">Premium is verified securely when Vertex is deployed with its server configuration.</p></form>
-      <div class="premium-request-divider"><span>Need access?</span></div><button class="secondary premium-request-toggle" id="premiumRequestToggle" type="button">Request premium access</button>
-      <form id="premiumRequestForm" class="premium-request-form" hidden><label>Name<input id="premiumRequestName" autocomplete="name" required></label><label>Email<input id="premiumRequestEmail" type="email" autocomplete="email" required></label><button class="primary" type="submit">Send request</button><p class="form-status" id="premiumRequestStatus"></p></form>
-    </section>
+  <div class="modal-overlay" id="endSessionOverlay" role="dialog" aria-modal="true" aria-labelledby="endSessionTitle">
+    <div class="modal end-session-modal">
+      <div class="modal-head">
+        <div>
+          <div style="font-weight:900; font-size:1.05rem" id="endSessionTitle">End this session?</div>
+          <div class="muted small">Your progress will be saved to your dashboard.</div>
+        </div>
+        <button class="icon-btn" id="endSessionCloseBtn" aria-label="Keep practicing">✕</button>
+      </div>
+      <div class="end-session-summary" id="endSessionSummary"></div>
+      <div class="feedback-form-actions">
+        <button class="btn ghost" id="continueSessionBtn">Keep practicing</button>
+        <button class="btn primary" id="confirmEndSessionBtn">End &amp; save session</button>
+      </div>
+    </div>
   </div>
-  <script src="app-shared.js"></script>
-  <script src="app.js?v=20260913-forms"></script>
+
+  <!-- NUMBERS GUIDE MODAL (kept from original app, restyled) -->
+  <div class="modal-overlay" id="numbersGuideOverlay" role="dialog" aria-modal="true" aria-labelledby="numbersGuideTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div style="font-weight:900; font-size:1.05rem" id="numbersGuideTitle">How Spanish Numbers Work (Quick Guide)</div>
+          <div class="muted small">Applies to any selected range from 1-1000.</div>
+        </div>
+        <button class="icon-btn" id="numbersGuideCloseBtn" aria-label="Close numbers guide">✕</button>
+      </div>
+      <ul>
+        <li><strong>1–15</strong>: memorize (uno, dos, tres… quince)</li>
+        <li><strong>16–19</strong>: <em>dieci</em> + number → dieciséis, diecisiete…</li>
+        <li><strong>20</strong>: veinte</li>
+        <li><strong>21–29</strong>: <em>veinti</em> + number → veintiuno, veintidós, veintitrés</li>
+        <li><strong>30–90</strong>: memorize tens (treinta, cuarenta, cincuenta…)</li>
+        <li><strong>31–99</strong>: tens + <em>y</em> + ones → cuarenta y dos</li>
+        <li><strong>100</strong>: cien (only exactly 100)</li>
+        <li><strong>101–199</strong>: ciento + rest → ciento uno</li>
+        <li><strong>200–900</strong>: memorize hundreds (doscientos, quinientos, setecientos)</li>
+        <li><strong>101–999</strong>: hundreds + rest → doscientos treinta y cuatro</li>
+        <li><strong>1000</strong>: mil (not <em>un mil</em>)</li>
+        <li><strong>Range</strong>: Settings can limit practice to a lower and upper endpoint; crossed endpoints are normalized automatically.</li>
+        <li><strong>Type and spell</strong>: when enabled, you must type the Spanish spelling before moving on.</li>
+        <li><strong>Go in order</strong>: when enabled, Numbers walks through the selected range and wraps to the beginning.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- HIDDEN MANAGER MODAL -->
+  <div class="modal-overlay" id="hiddenOverlay" role="dialog" aria-modal="true" aria-labelledby="hiddenTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div style="font-weight:900; font-size:1.05rem" id="hiddenTitle">Manage hidden questions</div>
+          <div class="muted small">Restore questions you hid, or export/import the hidden list.</div>
+        </div>
+        <button class="icon-btn" id="hiddenCloseBtn" aria-label="Close hidden questions manager">✕</button>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="restoreSelectedBtn">Restore selected</button>
+        <button class="btn" id="restoreAllBtn">Restore all</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button class="btn" id="exportHiddenBtn">Export hidden list (JSON)</button>
+        <button class="btn" id="importHiddenBtn">Import hidden list (JSON)</button>
+        <input type="file" id="importHiddenFile" accept="application/json" style="display:none" />
+        <label class="btn small ghost"><input type="checkbox" id="importHiddenReplace" />&nbsp;Replace (not merge)</label>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="muted small" id="hiddenSummary"></div>
+      <div class="hidden-list" id="hiddenList"></div>
+      <p class="small muted" id="hiddenEmptyNote" style="display:none">No hidden questions. Your future self approves.</p>
+    </div>
+  </div>
+
+  <!-- FIRST RUN OVERLAY -->
+  <div class="modal-overlay" id="firstRunOverlay" role="dialog" aria-modal="true" aria-labelledby="firstRunTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div style="font-weight:900; font-size:1.05rem" id="firstRunTitle">Start practicing in 3 steps</div>
+          <div class="muted small">You can use the defaults now and customize later.</div>
+        </div>
+        <button class="icon-btn" id="firstRunCloseBtn" aria-label="Close welcome">✕</button>
+      </div>
+
+      <div class="welcome-steps">
+        <div class="welcome-step"><span>1</span><div><strong>Choose a focus</strong><small>Use the Practice focus menu to stay on one topic or rotate through enabled topics.</small></div></div>
+        <div class="welcome-step"><span>2</span><div><strong>Answer, then continue</strong><small>Reveal an answer, type a response, or choose Next. Press Enter when typing.</small></div></div>
+        <div class="welcome-step"><span>3</span><div><strong>Customize when ready</strong><small>Open Settings to add modules, change the Numbers range, or turn on extra practice modes.</small></div></div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" id="firstRunGotItBtn">Start practicing</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="undoToast" role="status" aria-live="polite">
+    <span id="undoToastText">Progress reset.</span>
+    <button id="undoResetBtn" aria-label="Undo reset action">Undo</button>
+  </div>
+
+<script src="app-shared.js"></script>
+<!-- moderationPanel moderationHistory moderationRequestOverlay are rendered by access-ui.js -->
+<script src="app.js?v=20260915-access"></script>
+  <script src="access-ui.js?v=20260915-access"></script>
+  <script src="geometry-adapter.js?v=20260915-geometry"></script>
 </body>
 </html>
