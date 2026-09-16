@@ -5168,7 +5168,7 @@ mean/nice
     },
 
     setLevel(level, { historyMode = 'replace' } = {}) {
-      this.currentLevel = level === 'spanish2' ? 'spanish2' : 'spanish1';
+      this.currentLevel = level === 'geometry' ? 'geometry' : (level === 'spanish2' ? 'spanish2' : 'spanish1');
       const url = new URL(window.location.href);
       url.searchParams.set('class', this.currentLevel);
       if (historyMode === 'push') window.history.pushState({ class: this.currentLevel }, '', url);
@@ -5196,14 +5196,14 @@ mean/nice
       document.body.classList.toggle('level-spanish1', !spanish2);
       document.body.classList.toggle('level-spanish2', spanish2);
       if (this.$.settingsIntro) {
-        this.$.settingsIntro.textContent = spanish2
-          ? 'Spanish 2 Honors modules. Choose only the drills you want today.'
-          : 'Spanish 1 modules. Choose only the topics you want today.';
+        this.$.settingsIntro.textContent = geometryMode
+          ? 'Geometry sections. Choose only the topics you want today.'
+          : (spanish2 ? 'Spanish 2 Honors modules. Choose only the drills you want today.' : 'Spanish 1 modules. Choose only the topics you want today.');
       }
       this.$.enterPracticeBtn.disabled = spanish2 && enabledSummerModules.length === 0;
-      this.$.enterPracticeBtn.textContent = spanish2
-        ? (enabledSummerModules.length ? 'Enter Spanish 2 Honors →' : 'Enable Spanish 2 Honors modules')
-        : 'Enter practice session →';
+      this.$.enterPracticeBtn.textContent = geometryMode
+        ? 'Enter geometry session →'
+        : (spanish2 ? (enabledSummerModules.length ? 'Enter Spanish 2 Honors →' : 'Enable Spanish 2 Honors modules') : 'Enter practice session →');
       this.$.enterPracticeBtn.setAttribute('aria-label', spanish2
         ? (enabledSummerModules.length ? 'Enter Spanish 2 Honors' : 'Enable Spanish 2 Honors modules')
         : 'Enter practice session');

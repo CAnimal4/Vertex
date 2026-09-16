@@ -48,12 +48,20 @@
     const tabs = document.querySelector('.level-tabs'); if (tabs) tabs.hidden = true;
     const panel2 = document.getElementById('spanish2Panel'); if (panel2) panel2.hidden = true;
     const panel = document.getElementById('spanish1Panel');
+    const geometryMarkup = ['unit-1','unit-2','unit-3'].map((unit, index) => `<details class="module-group" open><summary>Unit ${index + 1}</summary><div class="module-group-content">${MODULES.filter((m) => m.unit === unit).map((m) => `<label class="toggle"><input type="checkbox" data-geometry-module="${m.key}" checked> <span><strong>${m.section} ${m.name}</strong></span></label>`).join('')}</div></details>`).join('');
     if (panel) {
-      panel.innerHTML = `<div class="home-overview-copy"><p class="eyebrow">Your math workspace</p><h1>Practice the geometry your class is studying.</h1><p>Choose a section below, then start a focused learning session.</p></div><div class="geometry-units">${['unit-1','unit-2','unit-3'].map((unit, index) => `<details class="module-group" open><summary>Unit ${index + 1}</summary><div class="module-group-content">${MODULES.filter((m) => m.unit === unit).map((m) => `<label class="toggle"><input type="checkbox" data-geometry-module="${m.key}" checked> <span><strong>${m.section} ${m.name}</strong><small>${m.sources.join(' + ')}</small></span></label>`).join('')}</div></details>`).join('')}</div>`;
-      panel.querySelectorAll('[data-geometry-module]').forEach((input) => input.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...panel.querySelectorAll('[data-geometry-module]')].map((box) => [box.dataset.geometryModule, box.checked])); app.saveSoon(); }));
+      // Keep the dashboard focused like Claro; section choices live in Modules/Settings.
+      panel.innerHTML = '<div class="home-overview-copy"><p class="eyebrow">Your math workspace</p><h1>Practice the geometry your class is studying.</h1><p>Choose sections in Modules, then start a focused learning session.</p></div>';
     }
-    const saved = app.state?.geometryModules || {};
-    panel?.querySelectorAll('[data-geometry-module]').forEach((box) => { box.checked = saved[box.dataset.geometryModule] !== false; });
+    const settingsModules = document.getElementById('moduleSettingsSection');
+    if (settingsModules) {
+      settingsModules.innerHTML = `<div class="module-settings-heading"><strong>Geometry modules</strong><small>Select the sections you want to practice.</small></div>${geometryMarkup}`;
+      const saved = app.state?.geometryModules || {};
+      settingsModules.querySelectorAll('[data-geometry-module]').forEach((box) => {
+        box.checked = saved[box.dataset.geometryModule] !== false;
+        box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...settingsModules.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); app.saveSoon(); });
+      });
+    }
     app.currentLevel = 'geometry';
     // Access-session refreshes can re-render the shared Claro header after this adapter runs.
     // Re-apply Vertex labels whenever that shared UI refreshes so the subject branding stays stable.
@@ -82,7 +90,11 @@
       renderQuestion(question, options);
       const name = MODULES.find((module) => module.key === question?.module)?.name;
       if (name && app.$.qaTitle) app.$.qaTitle.textContent = name;
+      if (app.$.answerInput) app.$.answerInput.placeholder = 'Type your answer...';
     };
+    if (app.$.accentToolbar) app.$.accentToolbar.hidden = true;
+    if (app.$.keyHintStrip) app.$.keyHintStrip.hidden = true;
+    if (app.$.answerInput) app.$.answerInput.placeholder = 'Type your answer...';
     app.getSessionTarget = () => window.VertexApp?.hasPremiumAccess?.() ? 18 : 10;
     app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; };
     const enter = document.getElementById('enterPracticeBtn'); if (enter) { enter.textContent = 'Enter geometry session →'; enter.setAttribute('aria-label', 'Enter geometry session'); }
