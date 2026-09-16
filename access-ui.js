@@ -97,6 +97,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Static modal markup must start closed; individual app handlers open them explicitly.
+    ['settingsOverlay', 'premiumOverlay', 'feedbackOverlay', 'endSessionOverlay', 'numbersGuideOverlay', 'hiddenOverlay', 'moderationRequestOverlay'].forEach((id) => {
+      const overlay = $(id);
+      if (overlay) { overlay.hidden = true; overlay.style.display = 'none'; }
+    });
     ensureTools();
     document.addEventListener('click', async (event) => {
       if (event.target.closest('#premiumSubmitBtn')) {
