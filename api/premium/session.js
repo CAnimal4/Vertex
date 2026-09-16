@@ -1,6 +1,3 @@
-const { publicSession, readSession } = require('../_lib/accessControl');
+const { hasActiveSession } = require('../_lib/premiumAuth');
 
-module.exports = (request, response) => {
-  const session = publicSession(readSession(request.headers.cookie));
-  return response.status(200).json({ premium: session.permissions.premium, role: session.role });
-};
+module.exports = (request, response) => response.status(200).json({ premium: hasActiveSession(request.headers.cookie) });
