@@ -100,7 +100,7 @@
     // Static modal markup must start closed; individual app handlers open them explicitly.
     ['settingsOverlay', 'premiumOverlay', 'feedbackOverlay', 'endSessionOverlay', 'numbersGuideOverlay', 'hiddenOverlay', 'moderationRequestOverlay'].forEach((id) => {
       const overlay = $(id);
-      if (overlay) { overlay.hidden = true; overlay.style.display = 'none'; }
+      if (overlay) { overlay.hidden = id === 'moderationRequestOverlay'; overlay.style.display = 'none'; }
     });
     ensureTools();
     document.addEventListener('click', async (event) => {
