@@ -65,7 +65,7 @@
     };
     if (typeof app.refreshSettingsUI === 'function') {
       const refreshSettingsUI = app.refreshSettingsUI.bind(app);
-      app.refreshSettingsUI = (...args) => { const result = refreshSettingsUI(...args); applyVertexLabels(); return result; };
+      app.refreshSettingsUI = (...args) => { const result = refreshSettingsUI(...args); app.currentLevel = 'geometry'; applyVertexLabels(); return result; };
     }
     applyVertexLabels();
     app.getEnabledModules = () => MODULES.filter((m) => app.state?.geometryModules?.[m.key] !== false).map((m) => m.key);
