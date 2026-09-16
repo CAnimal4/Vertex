@@ -50,7 +50,7 @@ function getAccessCodeActors() {
     ['PREMIUM_ACCESS_CODE', 'premium'], ['PREMIUM_ACCESS_CODE_1', 'premium'],
     ['PREMIUM_ACCESS_CODE_2', 'premium'], ['PREMIUM_ACCESS_CODE_3', 'premium'],
     ['MODERATOR_ACCESS_CODE', 'mod'], ['ADMIN_ACCESS_CODE', 'admin']
-  ].filter(([variable]) => typeof process.env[variable] === 'string' && process.env[variable].length > 0)
+  ].filter(([variable]) => typeof process.env[variable] === 'string' && process.env[variable].trim().length > 0)
     .map(([, role]) => ({ actorId: `${role}-access-code`, role }));
 }
 
@@ -82,7 +82,7 @@ function verifyCredential(password) {
   ];
   for (const [variable, role] of accessCodes) {
     const configured = process.env[variable];
-    if (typeof configured === 'string' && configured.length > 0 && sameValue(password, configured)) {
+    if (typeof configured === 'string' && configured.trim().length > 0 && sameValue(password, configured.trim())) {
       match = { actorId: `${role}-access-code`, role };
     }
   }
