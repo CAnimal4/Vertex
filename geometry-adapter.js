@@ -55,6 +55,19 @@
     const saved = app.state?.geometryModules || {};
     panel?.querySelectorAll('[data-geometry-module]').forEach((box) => { box.checked = saved[box.dataset.geometryModule] !== false; });
     app.currentLevel = 'geometry';
+    // Access-session refreshes can re-render the shared Claro header after this adapter runs.
+    // Re-apply Vertex labels whenever that shared UI refreshes so the subject branding stays stable.
+    const applyVertexLabels = () => {
+      const headerLabel = document.getElementById('headerLevel');
+      const classLabel = document.getElementById('classSwitcherLabel');
+      if (headerLabel) headerLabel.textContent = 'Accelerated Geometry';
+      if (classLabel) classLabel.textContent = 'Accelerated Geometry';
+    };
+    if (typeof app.refreshSettingsUI === 'function') {
+      const refreshSettingsUI = app.refreshSettingsUI.bind(app);
+      app.refreshSettingsUI = (...args) => { const result = refreshSettingsUI(...args); applyVertexLabels(); return result; };
+    }
+    applyVertexLabels();
     app.getEnabledModules = () => MODULES.filter((m) => app.state?.geometryModules?.[m.key] !== false).map((m) => m.key);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
     app.getModuleCounts = (key) => ({ total: (QUESTIONS[key] || []).length, available: (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]).length });
