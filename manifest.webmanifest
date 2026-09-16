@@ -1,10 +1,11 @@
 {
-  "name": "Vertex Math",
-  "short_name": "Vertex",
-  "description": "A focused math practice space.",
-  "start_url": "/",
+  "name": "Claro — Spanish 1",
+  "short_name": "Claro",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#f5faf6",
-  "theme_color": "#166534",
-  "icons": [{ "src": "assets/vertex-mark.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }]
+  "background_color": "#f5f7fb",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "assets/claro-mark-clean.png?v=20260912-2", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
