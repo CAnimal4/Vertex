@@ -45,6 +45,15 @@ function getCredentialRecords() {
   }
 }
 
+function getAccessCodeActors() {
+  return [
+    ['PREMIUM_ACCESS_CODE', 'premium'], ['PREMIUM_ACCESS_CODE_1', 'premium'],
+    ['PREMIUM_ACCESS_CODE_2', 'premium'], ['PREMIUM_ACCESS_CODE_3', 'premium'],
+    ['MODERATOR_ACCESS_CODE', 'mod'], ['ADMIN_ACCESS_CODE', 'admin']
+  ].filter(([variable]) => typeof process.env[variable] === 'string' && process.env[variable].length > 0)
+    .map(([, role]) => ({ actorId: `${role}-access-code`, role }));
+}
+
 function getSessionSecret() {
   return process.env.ACCESS_SESSION_SECRET || process.env.PREMIUM_SESSION_SECRET || '';
 }
@@ -124,7 +133,8 @@ function readSession(cookieHeader, now = Date.now()) {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (data.v !== 1 || !ROLES.includes(data.role) || data.role === 'free' || typeof data.actorId !== 'string'
       || !Number.isFinite(data.expiresAt) || data.expiresAt <= now) return { role: 'free', actorId: null };
-    const current = getCredentialRecords().find((record) => record.id === data.actorId && record.role === data.role);
+    const current = getCredentialRecords().find((record) => record.id === data.actorId && record.role === data.role)
+      || getAccessCodeActors().find((actor) => actor.actorId === data.actorId && actor.role === data.role);
     return current ? { role: data.role, actorId: data.actorId } : { role: 'free', actorId: null };
   } catch {
     return { role: 'free', actorId: null };
