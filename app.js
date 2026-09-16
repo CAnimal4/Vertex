@@ -5182,9 +5182,10 @@ mean/nice
       const spanish2 = this.currentLevel === 'spanish2';
       const summerModules = MODULES.filter(m => m.level === 2);
       const enabledSummerModules = summerModules.filter(m => this.state?.settings?.modulesEnabled?.[m.key]);
-      this.$.headerLevel.textContent = spanish2 ? 'Spanish 2 Honors' : 'Spanish 1';
+      const geometryMode = this.currentLevel === 'geometry';
+      this.$.headerLevel.textContent = geometryMode ? 'Accelerated Geometry' : (spanish2 ? 'Spanish 2 Honors' : 'Spanish 1');
       const classSwitcherLabel = document.getElementById('classSwitcherLabel');
-      if (classSwitcherLabel) classSwitcherLabel.textContent = spanish2 ? 'Spanish 2 Honors' : 'Spanish 1';
+      if (classSwitcherLabel) classSwitcherLabel.textContent = geometryMode ? 'Accelerated Geometry' : (spanish2 ? 'Spanish 2 Honors' : 'Spanish 1');
       document.querySelectorAll('#classSwitcherMenu [data-class]').forEach((option) => { const current = option.dataset.class === this.currentLevel; option.classList.toggle('is-current', current); option.setAttribute('aria-current', current ? 'page' : 'false'); });
       this.$.spanish1Tab.classList.toggle('is-active', !spanish2);
       this.$.spanish2Tab.classList.toggle('is-active', spanish2);
