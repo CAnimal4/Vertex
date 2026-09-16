@@ -2598,6 +2598,7 @@ mean/nice
       analyticsVersion: ANALYTICS_VERSION,
       practiceSessions: [],
       lifetimeStats: { answered: 0, correct: 0, currentStreak: 0, bestStreak: 0 }
+      ,geometryModules: {}
       ,lastLevel: 'spanish1'
       ,lastModule: null
     };
@@ -2686,6 +2687,13 @@ mean/nice
       }
     }
 
+    if (isPlainObject(raw.geometryModules)) {
+      out.geometryModules = {};
+      for (const [key, enabled] of Object.entries(raw.geometryModules)) {
+        if (typeof key === 'string' && key.length <= 80) out.geometryModules[key] = !!enabled;
+      }
+    }
+
     // Checksum + stats (optional)
     if (typeof raw.vocabChecksum === 'string') out.vocabChecksum = raw.vocabChecksum;
 
@@ -2703,7 +2711,7 @@ mean/nice
     }
 
     if (typeof raw.profileId === 'string') out.profileId = raw.profileId.slice(0, 120);
-    if (raw.lastLevel === 'spanish1' || raw.lastLevel === 'spanish2') out.lastLevel = raw.lastLevel;
+    if (raw.lastLevel === 'spanish1' || raw.lastLevel === 'spanish2' || raw.lastLevel === 'geometry') out.lastLevel = raw.lastLevel;
     if (typeof raw.lastModule === 'string' && raw.lastModule.length <= 80) out.lastModule = raw.lastModule;
     if (Number(raw.analyticsVersion) === ANALYTICS_VERSION && Array.isArray(raw.practiceSessions)) {
       out.practiceSessions = raw.practiceSessions.slice(-50).map((session) => ({

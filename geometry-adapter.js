@@ -48,10 +48,10 @@
     const tabs = document.querySelector('.level-tabs'); if (tabs) tabs.hidden = true;
     const panel2 = document.getElementById('spanish2Panel'); if (panel2) panel2.hidden = true;
     const panel = document.getElementById('spanish1Panel');
-    const geometryMarkup = ['unit-1','unit-2','unit-3'].map((unit, index) => `<details class="module-group" open><summary>Unit ${index + 1}</summary><div class="module-group-content">${MODULES.filter((m) => m.unit === unit).map((m) => `<label class="toggle"><input type="checkbox" data-geometry-module="${m.key}" checked> <span><strong>${m.section} ${m.name}</strong></span></label>`).join('')}</div></details>`).join('');
+    const geometryMarkup = ['unit-1','unit-2','unit-3'].map((unit, index) => `<details class="module-group" open><summary>Unit ${index + 1}</summary><div class="module-group-content">${MODULES.filter((m) => m.unit === unit).map((m) => `<div class="toggle"><div><div class="label">${m.section} ${m.name}</div><div class="desc">Practice questions from this geometry section.</div></div><label><input type="checkbox" data-geometry-module="${m.key}" aria-label="Toggle ${m.section} ${m.name} module" checked><span class="switch" aria-hidden="true"></span></label></div>`).join('')}</div></details>`).join('');
     if (panel) {
-      // Keep the dashboard focused like Claro; section choices live in Modules/Settings.
-      panel.innerHTML = '<div class="home-overview-copy"><p class="eyebrow">Your math workspace</p><h1>Practice the geometry your class is studying.</h1><p>Choose sections in Modules, then start a focused learning session.</p></div>';
+      // Keep Claro's dashboard structure and hierarchy. Only the content is Vertex-specific.
+      panel.innerHTML = '<div class="home-overview-card"><span class="home-overview-label">Ready to practice</span><strong id="homeModuleSummary">Geometry sections</strong><small>Enabled sections are used when you choose All enabled modules.</small></div><div class="home-overview-card home-overview-card-muted"><span class="home-overview-label">Simple by default</span><strong>One question at a time</strong><small>Your progress stays in this browser.</small></div>';
     }
     const settingsModules = document.getElementById('moduleSettingsSection');
     if (settingsModules) {
@@ -62,7 +62,7 @@
         box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...settingsModules.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); app.saveSoon(); });
       });
     }
-    app.currentLevel = 'geometry';
+    app.setLevel('geometry', { historyMode: 'replace' });
     // Access-session refreshes can re-render the shared Claro header after this adapter runs.
     // Re-apply Vertex labels whenever that shared UI refreshes so the subject branding stays stable.
     const applyVertexLabels = () => {
@@ -78,6 +78,12 @@
     applyVertexLabels();
     app.getEnabledModules = () => MODULES.filter((m) => app.state?.geometryModules?.[m.key] !== false).map((m) => m.key);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
+    app.updateHomeSummary = () => {
+      const summary = document.getElementById('homeModuleSummary');
+      if (!summary) return;
+      const names = MODULES.filter((module) => app.state?.geometryModules?.[module.key] !== false).map((module) => module.name);
+      summary.textContent = names.length ? names.join(', ') : 'No sections selected yet';
+    };
     app.getModuleCounts = (key) => ({ total: (QUESTIONS[key] || []).length, available: (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]).length });
     app.generateQuestion = (key) => {
       const choices = (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]);
