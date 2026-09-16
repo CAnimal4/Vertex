@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP = { id: 'vertex', name: 'Vertex', feedbackUrl: 'https://tally.so/r/Pdq7AQ', premiumUrl: 'https://tally.so/r/Y5A1Oq' };
+  const APP = { id: 'vertex', name: 'Vertex', feedbackUrl: 'https://tally.so/r/gDEWa1', premiumUrl: 'https://tally.so/r/44MPBB' };
   const STORAGE_KEY = 'vertex_math_v2_state';
   const ROLE_RANK = { free: 0, premium: 1, mod: 2, admin: 3 };
   const curriculum = window.VertexCurriculum;
