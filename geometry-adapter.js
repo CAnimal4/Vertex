@@ -62,6 +62,33 @@
         box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...settingsModules.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); app.saveSoon(); });
       });
     }
+    // The shared shell still contains Claro's Spanish-only behavior controls and
+    // diagnostics. Keep their DOM hooks intact for the shared app code, but do
+    // not expose misleading controls or test language in Vertex.
+    const practiceBehavior = document.getElementById('practiceBehaviorSettings');
+    if (practiceBehavior) practiceBehavior.hidden = true;
+    const keyboardHelp = [...document.querySelectorAll('.settings-accordion')].find((node) => /Keyboard\s*&\s*Help/i.test(node.querySelector('summary')?.textContent || ''));
+    if (keyboardHelp) {
+      const summary = keyboardHelp.querySelector('summary');
+      if (summary) summary.innerHTML = 'Geometry keyboard help <span class="summary-note">Optional</span>';
+      const copy = keyboardHelp.querySelector('.small.muted');
+      if (copy) copy.textContent = 'Space reveals a hint when the answer field is not focused. Enter submits a geometry answer.';
+    }
+    const checks = [...document.querySelectorAll('.settings-accordion')].find((node) => /Developer\s*Checks/i.test(node.querySelector('summary')?.textContent || ''));
+    if (checks) {
+      const summary = checks.querySelector('summary');
+      if (summary) summary.innerHTML = 'Vertex checks <span class="summary-note">Advanced</span>';
+      const debugLabel = checks.querySelector('label[for="toggleDebugMode"]') || checks.querySelector('#toggleDebugMode')?.closest('label');
+      if (debugLabel) debugLabel.innerHTML = '<input type="checkbox" id="toggleDebugMode" aria-label="Enable Vertex debug mode" />&nbsp;Verbose Vertex logs';
+      const runButton = checks.querySelector('#runChecksBtn');
+      if (runButton) { runButton.textContent = 'Run geometry checks'; runButton.setAttribute('aria-label', 'Run Vertex geometry checks'); }
+      const output = checks.querySelector('#checksOutput');
+      if (output) output.textContent = 'Vertex geometry checks not run yet.';
+    }
+    const premiumFeedback = document.getElementById('premiumFeedback');
+    if (premiumFeedback) premiumFeedback.textContent = 'Vertex access is verified securely when this app is deployed with its server configuration.';
+    const feedbackCopy = document.querySelector('#feedbackOverlay .modal-heading p');
+    if (feedbackCopy) feedbackCopy.textContent = 'Ideas and geometry module requests help shape Vertex.';
     app.setLevel('geometry', { historyMode: 'replace' });
     // Access-session refreshes can re-render the shared Claro header after this adapter runs.
     // Re-apply Vertex labels whenever that shared UI refreshes so the subject branding stays stable.
@@ -85,6 +112,18 @@
       summary.textContent = names.length ? names.join(', ') : 'No sections selected yet';
     };
     app.getModuleCounts = (key) => ({ total: (QUESTIONS[key] || []).length, available: (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]).length });
+    const runGeometryChecks = () => {
+      const results = MODULES.map((module) => {
+        const question = QUESTIONS[module.key]?.[0];
+        return { ok: Boolean(question), label: `${module.section} ${module.name} questions registered` };
+      });
+      results.push({ ok: app.getEnabledModules().every((key) => Boolean(QUESTIONS[key]),), label: 'Enabled geometry sections have question pools' });
+      const pass = results.filter((result) => result.ok).length;
+      const output = document.getElementById('checksOutput');
+      if (output) { output.className = `feedback ${pass === results.length ? 'good' : 'bad'}`; output.innerHTML = `${results.map((result) => `${result.ok ? '✓' : '✗'} ${result.label}`).join('<br>')}<br><small>Summary: ${pass}/${results.length} passed</small>`; }
+      return { pass, total: results.length, results };
+    };
+    app.runAutomatedChecks = runGeometryChecks;
     app.generateQuestion = (key) => {
       const choices = (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]);
       const item = choices[Math.floor(Math.random() * choices.length)]; if (!item) return null;
