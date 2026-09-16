@@ -28,10 +28,10 @@ function publicSession(session) {
 function getCredentialRecords() {
   const configured = [process.env.ACCESS_CREDENTIALS_JSON, process.env.ROLE_CREDENTIALS_JSON, process.env.PREMIUM_PASSWORD_HASHES_JSON];
   try {
-    const value = configured.map((raw) => {
+    const value = configured.flatMap((raw) => {
       if (typeof raw !== 'string' || !raw.trim()) return [];
       try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
-    }).find((records) => records.length) || [];
+    });
     return value.filter((record) => {
       const role = record && (record.role || 'premium');
       return record && typeof record.id === 'string' && record.id.length > 0 && record.id.length <= 128
