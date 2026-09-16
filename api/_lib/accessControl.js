@@ -69,6 +69,12 @@ function sameValue(left, right) {
   return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
+function normalizeAccessCode(value) {
+  const trimmed = String(value || '').trim();
+  if (trimmed.length >= 2 && ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'")))) return trimmed.slice(1, -1).trim();
+  return trimmed;
+}
+
 function verifyCredential(password) {
   if (!getSessionSecret() || typeof password !== 'string' || password.length < 1 || password.length > 512) return null;
   let match = null;
@@ -82,7 +88,7 @@ function verifyCredential(password) {
   ];
   for (const [variable, role] of accessCodes) {
     const configured = process.env[variable];
-    if (typeof configured === 'string' && configured.trim().length > 0 && sameValue(password, configured.trim())) {
+    if (typeof configured === 'string' && normalizeAccessCode(configured).length > 0 && sameValue(password.trim(), normalizeAccessCode(configured))) {
       match = { actorId: `${role}-access-code`, role };
     }
   }
