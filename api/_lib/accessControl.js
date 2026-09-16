@@ -65,6 +65,9 @@ function verifyCredential(password) {
   let match = null;
   const accessCodes = [
     ['PREMIUM_ACCESS_CODE', 'premium'],
+    ['PREMIUM_ACCESS_CODE_1', 'premium'],
+    ['PREMIUM_ACCESS_CODE_2', 'premium'],
+    ['PREMIUM_ACCESS_CODE_3', 'premium'],
     ['MODERATOR_ACCESS_CODE', 'mod'],
     ['ADMIN_ACCESS_CODE', 'admin']
   ];
