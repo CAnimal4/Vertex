@@ -63,6 +63,17 @@ function sameValue(left, right) {
 function verifyCredential(password) {
   if (!getSessionSecret() || typeof password !== 'string' || password.length < 1 || password.length > 512) return null;
   let match = null;
+  const accessCodes = [
+    ['PREMIUM_ACCESS_CODE', 'premium'],
+    ['MODERATOR_ACCESS_CODE', 'mod'],
+    ['ADMIN_ACCESS_CODE', 'admin']
+  ];
+  for (const [variable, role] of accessCodes) {
+    const configured = process.env[variable];
+    if (typeof configured === 'string' && configured.length > 0 && sameValue(password, configured)) {
+      match = { actorId: `${role}-access-code`, role };
+    }
+  }
   for (const record of getCredentialRecords()) {
     let derived = '';
     try {
