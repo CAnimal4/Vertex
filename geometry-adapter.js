@@ -26,7 +26,7 @@
     'geometry-3-1': [['u3-1-perpendicular','Lines that intersect to form right angles are?', 'perpendicular lines'], ['u3-1-transversal','A line that intersects two or more coplanar lines is a?', 'transversal']]
   };
   const normalize = (value) => String(value).toLowerCase().replace(/[∠≅.,?]/g, '').replace(/\s+/g, ' ').trim();
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(() => {
     const app = window.SpanishPracticeApp;
     if (!app) return;
     window.VertexApp = app;
@@ -99,5 +99,5 @@
     app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; };
     const enter = document.getElementById('enterPracticeBtn'); if (enter) { enter.textContent = 'Enter geometry session →'; enter.setAttribute('aria-label', 'Enter geometry session'); }
     app.refreshSettingsUI?.();
-  });
+  }, 0); });
 })();

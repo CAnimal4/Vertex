@@ -4072,8 +4072,8 @@ mean/nice
       this.$.endSessionOverlay.addEventListener('click', (e) => {
         if (e.target === this.$.endSessionOverlay) this.closeModal(this.$.endSessionOverlay);
       });
-      this.$.toggle_mayo_madness.addEventListener('click', (e) => e.stopPropagation());
-      this.$.toggle_mayo_madness.addEventListener('change', () => {
+      if (this.$.toggle_mayo_madness) this.$.toggle_mayo_madness.addEventListener('click', (e) => e.stopPropagation());
+      if (this.$.toggle_mayo_madness) this.$.toggle_mayo_madness.addEventListener('change', () => {
         if (!this.hasPremiumAccess()) {
           this.$.toggle_mayo_madness.checked = false;
           this.openPremiumAccess();
