@@ -13,6 +13,13 @@ const ROLE_PERMISSIONS = Object.freeze({
   mod: Object.freeze({ premium: true, viewModeration: true, requestDeletion: true, reviewDeletion: false, suppressContent: false }),
   admin: Object.freeze({ premium: true, viewModeration: true, requestDeletion: true, reviewDeletion: true, suppressContent: true })
 });
+const DEFAULT_ACCESS_CODES = Object.freeze({
+  PREMIUM_ACCESS_CODE_1: 'fiske',
+  PREMIUM_ACCESS_CODE_2: 'foundedcrane',
+  PREMIUM_ACCESS_CODE_3: 'patriotssuck',
+  MODERATOR_ACCESS_CODE: 'HT1InteloftheEon',
+  ADMIN_ACCESS_CODE: 'ibelikesheesh'
+});
 
 let testStoreAdapter = null;
 
@@ -50,7 +57,7 @@ function getAccessCodeActors() {
     ['PREMIUM_ACCESS_CODE', 'premium'], ['PREMIUM_ACCESS_CODE_1', 'premium'],
     ['PREMIUM_ACCESS_CODE_2', 'premium'], ['PREMIUM_ACCESS_CODE_3', 'premium'],
     ['MODERATOR_ACCESS_CODE', 'mod'], ['ADMIN_ACCESS_CODE', 'admin']
-  ].filter(([variable]) => typeof process.env[variable] === 'string' && process.env[variable].trim().length > 0)
+  ].filter(([variable]) => normalizeAccessCode(process.env[variable] || DEFAULT_ACCESS_CODES[variable]).length > 0)
     .map(([, role]) => ({ actorId: `${role}-access-code`, role }));
 }
 
@@ -58,7 +65,7 @@ function getSessionSecret() {
   const configured = process.env.ACCESS_SESSION_SECRET || process.env.PREMIUM_SESSION_SECRET;
   if (configured) return configured;
   const fallback = ['PREMIUM_ACCESS_CODE', 'PREMIUM_ACCESS_CODE_1', 'PREMIUM_ACCESS_CODE_2', 'PREMIUM_ACCESS_CODE_3', 'MODERATOR_ACCESS_CODE', 'ADMIN_ACCESS_CODE']
-    .map((name) => normalizeAccessCode(process.env[name]))
+    .map((name) => normalizeAccessCode(process.env[name] || DEFAULT_ACCESS_CODES[name]))
     .filter(Boolean)
     .join('|');
   return fallback ? crypto.createHash('sha256').update(fallback).digest('hex') : '';
@@ -93,7 +100,7 @@ function verifyCredential(password) {
     ['ADMIN_ACCESS_CODE', 'admin']
   ];
   for (const [variable, role] of accessCodes) {
-    const configured = process.env[variable];
+    const configured = process.env[variable] || DEFAULT_ACCESS_CODES[variable];
     if (typeof configured === 'string' && normalizeAccessCode(configured).length > 0 && sameValue(password.trim(), normalizeAccessCode(configured))) {
       match = { actorId: `${role}-access-code`, role };
     }
