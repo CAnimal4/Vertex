@@ -55,7 +55,13 @@ function getAccessCodeActors() {
 }
 
 function getSessionSecret() {
-  return process.env.ACCESS_SESSION_SECRET || process.env.PREMIUM_SESSION_SECRET || '';
+  const configured = process.env.ACCESS_SESSION_SECRET || process.env.PREMIUM_SESSION_SECRET;
+  if (configured) return configured;
+  const fallback = ['PREMIUM_ACCESS_CODE', 'PREMIUM_ACCESS_CODE_1', 'PREMIUM_ACCESS_CODE_2', 'PREMIUM_ACCESS_CODE_3', 'MODERATOR_ACCESS_CODE', 'ADMIN_ACCESS_CODE']
+    .map((name) => normalizeAccessCode(process.env[name]))
+    .filter(Boolean)
+    .join('|');
+  return fallback ? crypto.createHash('sha256').update(fallback).digest('hex') : '';
 }
 
 function getTtlSeconds() {
