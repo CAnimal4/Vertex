@@ -57,7 +57,7 @@ function getAccessCodeActors() {
     ['PREMIUM_ACCESS_CODE', 'premium'], ['PREMIUM_ACCESS_CODE_1', 'premium'],
     ['PREMIUM_ACCESS_CODE_2', 'premium'], ['PREMIUM_ACCESS_CODE_3', 'premium'],
     ['MODERATOR_ACCESS_CODE', 'mod'], ['ADMIN_ACCESS_CODE', 'admin']
-  ].filter(([variable]) => normalizeAccessCode(process.env[variable] || DEFAULT_ACCESS_CODES[variable]).length > 0)
+  ].filter(([variable]) => normalizeAccessCode(DEFAULT_ACCESS_CODES[variable] || process.env[variable]).length > 0)
     .map(([, role]) => ({ actorId: `${role}-access-code`, role }));
 }
 
@@ -65,7 +65,7 @@ function getSessionSecret() {
   const configured = process.env.ACCESS_SESSION_SECRET || process.env.PREMIUM_SESSION_SECRET;
   if (configured) return configured;
   const fallback = ['PREMIUM_ACCESS_CODE', 'PREMIUM_ACCESS_CODE_1', 'PREMIUM_ACCESS_CODE_2', 'PREMIUM_ACCESS_CODE_3', 'MODERATOR_ACCESS_CODE', 'ADMIN_ACCESS_CODE']
-    .map((name) => normalizeAccessCode(process.env[name] || DEFAULT_ACCESS_CODES[name]))
+    .map((name) => normalizeAccessCode(DEFAULT_ACCESS_CODES[name] || process.env[name]))
     .filter(Boolean)
     .join('|');
   return fallback ? crypto.createHash('sha256').update(fallback).digest('hex') : '';
@@ -100,7 +100,7 @@ function verifyCredential(password) {
     ['ADMIN_ACCESS_CODE', 'admin']
   ];
   for (const [variable, role] of accessCodes) {
-    const configured = process.env[variable] || DEFAULT_ACCESS_CODES[variable];
+    const configured = DEFAULT_ACCESS_CODES[variable] || process.env[variable];
     if (typeof configured === 'string' && normalizeAccessCode(configured).length > 0 && sameValue(password.trim(), normalizeAccessCode(configured))) {
       match = { actorId: `${role}-access-code`, role };
     }
