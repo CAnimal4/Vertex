@@ -191,7 +191,14 @@
       if (event.target.closest('#premiumSubmitBtn')) {
         event.preventDefault(); event.stopImmediatePropagation();
         const password = $('premiumPasswordInput')?.value || '';
-        try { session = await request('/api/access/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }); $('premiumPasswordInput').value = ''; sync(); setStatus(`${roleLabel()} access is active on this device.`, 'good'); }
+        try {
+          session = await request('/api/access/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+          $('premiumPasswordInput').value = '';
+          sync();
+          const overlay = $('premiumOverlay');
+          if (overlay) { overlay.hidden = true; overlay.style.display = 'none'; }
+          setStatus(`${roleLabel()} access is active on this device.`, 'good');
+        }
         catch (error) { setStatus(error.message, 'bad'); }
       }
     }, true);
