@@ -130,13 +130,14 @@ body:has(.learning-app-shell){padding:0!important}
 .learning-app-shell .app-switcher-menu img{display:block;flex:0 0 auto;object-fit:contain;background:var(--brand-soft,#f8fafc);border:0}
 .learning-app-shell .brand-switcher-button .brand-mark{width:42px!important;height:42px!important;border-radius:12px!important}
 .learning-app-shell .app-switcher-menu img{width:32px!important;height:32px!important;border-radius:9px!important}
-.learning-app-shell .brand-switcher-button .brand-mark[src*="claro-mark"]{transform:scale(1)}
+.learning-app-shell .brand-switcher-button .brand-mark[src*="claro-mark"],
 .learning-app-shell .brand-switcher-button .brand-mark[src*="vertex-mark"],
-.learning-app-shell .app-switcher-menu img[src*="vertex-mark"]{transform:scale(1.06)}
 .learning-app-shell .brand-switcher-button .brand-mark[src*="meridian-mark"],
-.learning-app-shell .app-switcher-menu img[src*="meridian-mark"]{transform:scale(1.2)}
 .learning-app-shell .brand-switcher-button .brand-mark[src*="atlas-mark"],
-.learning-app-shell .app-switcher-menu img[src*="atlas-mark"]{transform:scale(1.38)}
+.learning-app-shell .app-switcher-menu img[src*="claro-mark"],
+.learning-app-shell .app-switcher-menu img[src*="vertex-mark"],
+.learning-app-shell .app-switcher-menu img[src*="meridian-mark"],
+.learning-app-shell .app-switcher-menu img[src*="atlas-mark"]{transform:none}
 .learning-app-shell .app-switcher-menu a{min-height:48px}
 .learning-app-shell .settings-accordion>summary{list-style:none;cursor:pointer}
 .learning-app-shell .settings-accordion>summary::-webkit-details-marker,
