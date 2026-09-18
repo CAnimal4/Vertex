@@ -92,8 +92,6 @@
       return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
     }).join('');
     section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + heading + markup;
-    section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + heading + markup;
->>>>>>> 2856088 (Style Vertex settings and app switcher)
     section.querySelectorAll('[data-geometry-module]:not(:disabled)').forEach((box) => box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...section.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); writePreferences({ ...readPreferences(), modules: app.state.geometryModules }); app.saveSoon(); app.updateHomeSummary?.(); }));
     section.querySelectorAll('details.module-group').forEach((group) => group.addEventListener('toggle', () => { const groups = { ...readPreferences().groups, [group.querySelector('summary').textContent === 'Reference' ? 'reference' : `unit-${group.querySelector('summary').textContent.slice(-1)}`]: group.open }; writePreferences({ ...readPreferences(), groups }); }));
   }
@@ -104,14 +102,15 @@
     ['subtitle','headerLevel','classSwitcherLabel'].forEach((id) => { const node = document.getElementById(id); if (node) node.textContent = 'Accelerated Geometry'; });
     const heading = document.querySelector('#homeCard h1'); if (heading) heading.textContent = 'Practice Accelerated Geometry';
     const lead = document.querySelector('#homeCard .home-intro'); if (lead) lead.textContent = 'Choose sections, then start a focused geometry session.';
-    document.querySelector('.dashboard-switcher')?.setAttribute('hidden',''); document.querySelector('.level-switch')?.setAttribute('hidden',''); document.getElementById('spanish2Panel')?.setAttribute('hidden',''); document.getElementById('practiceBehaviorSettings')?.setAttribute('hidden',''); document.getElementById('accentToolbar')?.setAttribute('hidden','');
+    ['.dashboard-switcher','.level-switch','#spanish2Panel','#practiceOnlyRow','#practiceOnlyMobile','#soloSelect','#numbersSection','#numbersGuideOverlay','#summerPrepSettings','#practiceBehaviorSettings','#accentToolbar'].forEach((selector) => document.querySelectorAll(selector).forEach((node) => node.hidden = true));
+    const levelPanel = document.getElementById('spanish1Panel'); if (levelPanel) levelPanel.hidden = false;
     const input = document.getElementById('answerInput'); if (input) input.placeholder = 'Type a geometry answer...';
     const enter = document.getElementById('enterPracticeBtn'); if (enter) { enter.innerHTML = 'Enter geometry session <span aria-hidden="true">→</span>'; enter.setAttribute('aria-label','Enter geometry session'); }
     const help = [...document.querySelectorAll('.settings-accordion')].find((node) => /Keyboard\s*&\s*Help/i.test(node.querySelector('summary')?.textContent || '')); if (help) { help.querySelector('summary').innerHTML = 'Geometry keyboard help <span class="summary-note">Optional</span>'; help.querySelector('.small.muted').textContent = 'Use the math symbol keyboard when notation is helpful. Enter submits your answer.'; }
   }
 
   document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
-    const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' });
+    const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' }); labels();
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && QUESTIONS[key]?.length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
     app.getModuleCounts = (key) => ({ total:(QUESTIONS[key] || []).length, available:poolFor(app,key).length });
