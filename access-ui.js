@@ -186,6 +186,14 @@
     });
     ensureTools();
     window.addEventListener('premium:open', openPremiumFromLock);
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || !event.target.closest('#premiumPasswordInput')) return;
+      // The legacy app runtime also listens for Enter and would validate only
+      // its old client-side password list. Route keyboard submission through
+      // the same server-owned login path as the button click.
+      event.preventDefault(); event.stopImmediatePropagation();
+      $('premiumSubmitBtn')?.click();
+    }, true);
     document.addEventListener('click', async (event) => {
       if (event.target.closest('#premiumBtn,[data-premium-lock]')) closeSettingsBeforePremium();
       if (event.target.closest('#premiumSubmitBtn')) {
