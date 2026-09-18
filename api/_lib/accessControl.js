@@ -20,12 +20,28 @@ const DEFAULT_ACCESS_CODES = Object.freeze({
   MODERATOR_ACCESS_CODE: 'HT1InteloftheEon',
   ADMIN_ACCESS_CODE: 'ibelikesheesh'
 });
+const ACCESS_APP_ID = process.env.ACCESS_APP_ID || 'vertex';
+const ACCESS_APP_KEY = ACCESS_APP_ID.replace(/[^a-z0-9]+/gi, '_').toUpperCase();
 
 let testStoreAdapter = null;
 
 function permissionsFor(role) {
   return { ...(ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.free) };
 }
+
+function roleCodeVariables(role) {
+  const prefix = role === 'mod' ? 'MODERATOR' : 'ADMIN';
+  return [`${prefix}_ACCESS_CODE_${ACCESS_APP_KEY}_1`, `${prefix}_ACCESS_CODE_${ACCESS_APP_KEY}_2`, `${prefix}_ACCESS_CODE_1`, `${prefix}_ACCESS_CODE_2`, `${prefix}_ACCESS_CODE`];
+}
+
+function accessCodeEntries() {
+  return [
+    ['PREMIUM_ACCESS_CODE', 'premium'], ['PREMIUM_ACCESS_CODE_1', 'premium'], ['PREMIUM_ACCESS_CODE_2', 'premium'], ['PREMIUM_ACCESS_CODE_3', 'premium'],
+    ...roleCodeVariables('mod').map((variable) => [variable, 'mod']), ...roleCodeVariables('admin').map((variable) => [variable, 'admin'])
+  ];
+}
+
+function configuredAccessCode(variable) { return normalizeAccessCode(DEFAULT_ACCESS_CODES[variable] || process.env[variable]); }
 
 function publicSession(session) {
   const role = ROLES.includes(session && session.role) ? session.role : 'free';
@@ -53,19 +69,14 @@ function getCredentialRecords() {
 }
 
 function getAccessCodeActors() {
-  return [
-    ['PREMIUM_ACCESS_CODE', 'premium'], ['PREMIUM_ACCESS_CODE_1', 'premium'],
-    ['PREMIUM_ACCESS_CODE_2', 'premium'], ['PREMIUM_ACCESS_CODE_3', 'premium'],
-    ['MODERATOR_ACCESS_CODE', 'mod'], ['ADMIN_ACCESS_CODE', 'admin']
-  ].filter(([variable]) => normalizeAccessCode(DEFAULT_ACCESS_CODES[variable] || process.env[variable]).length > 0)
-    .map(([, role]) => ({ actorId: `${role}-access-code`, role }));
+  return accessCodeEntries().filter(([variable]) => configuredAccessCode(variable).length > 0)
+    .map(([variable, role]) => ({ actorId: `${ACCESS_APP_ID}-${role}-${variable.toLowerCase()}`, role }));
 }
 
 function getSessionSecret() {
   const configured = process.env.ACCESS_SESSION_SECRET || process.env.PREMIUM_SESSION_SECRET;
   if (configured) return configured;
-  const fallback = ['PREMIUM_ACCESS_CODE', 'PREMIUM_ACCESS_CODE_1', 'PREMIUM_ACCESS_CODE_2', 'PREMIUM_ACCESS_CODE_3', 'MODERATOR_ACCESS_CODE', 'ADMIN_ACCESS_CODE']
-    .map((name) => normalizeAccessCode(DEFAULT_ACCESS_CODES[name] || process.env[name]))
+  const fallback = accessCodeEntries().map(([name]) => configuredAccessCode(name))
     .filter(Boolean)
     .join('|');
   return fallback ? crypto.createHash('sha256').update(fallback).digest('hex') : '';
@@ -91,18 +102,10 @@ function normalizeAccessCode(value) {
 function verifyCredential(password) {
   if (!getSessionSecret() || typeof password !== 'string' || password.length < 1 || password.length > 512) return null;
   let match = null;
-  const accessCodes = [
-    ['PREMIUM_ACCESS_CODE', 'premium'],
-    ['PREMIUM_ACCESS_CODE_1', 'premium'],
-    ['PREMIUM_ACCESS_CODE_2', 'premium'],
-    ['PREMIUM_ACCESS_CODE_3', 'premium'],
-    ['MODERATOR_ACCESS_CODE', 'mod'],
-    ['ADMIN_ACCESS_CODE', 'admin']
-  ];
-  for (const [variable, role] of accessCodes) {
-    const configured = DEFAULT_ACCESS_CODES[variable] || process.env[variable];
-    if (typeof configured === 'string' && normalizeAccessCode(configured).length > 0 && sameValue(password.trim(), normalizeAccessCode(configured))) {
-      match = { actorId: `${role}-access-code`, role };
+  for (const [variable, role] of accessCodeEntries()) {
+    const configured = configuredAccessCode(variable);
+    if (configured.length > 0 && sameValue(password.trim(), configured)) {
+      match = { actorId: `${ACCESS_APP_ID}-${role}-${variable.toLowerCase()}`, role };
     }
   }
   for (const record of getCredentialRecords()) {
@@ -242,7 +245,7 @@ function normalizeModerationState(value) {
 }
 
 function kvConfig() {
-  const namespace = process.env.MODERATION_STORE_NAMESPACE || process.env.ACCESS_APP_ID || process.env.VERCEL_PROJECT_ID || 'learning-app';
+  const namespace = process.env.MODERATION_STORE_NAMESPACE || ACCESS_APP_ID || process.env.VERCEL_PROJECT_ID || 'learning-app';
   return {
     url: process.env.MODERATION_KV_REST_API_URL || process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
     token: process.env.MODERATION_KV_REST_API_TOKEN || process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',

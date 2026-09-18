@@ -47,6 +47,7 @@
   const APP_VERSION = 2;
   const ANALYTICS_VERSION = 2;
   const APP_ID = 'vertex';
+  const ATLAS_PLANS_URL = 'https://atlaslearning.vercel.app/plans';
   // Paste the public Tally form URLs here after creating the two forms.
   // Example: https://tally.so/r/xxxxxx
   const TALLY_FEEDBACK_URL = 'https://tally.so/r/68grLO';
@@ -58,6 +59,31 @@
       if (value != null && String(value)) url.searchParams.set(key, String(value));
     });
     window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  }
+
+  function tallyReturnUrl(notice) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('atlas_notice', notice);
+    return url.toString();
+  }
+
+  function openAccessPlans() {
+    const url = new URL(ATLAS_PLANS_URL);
+    url.searchParams.set('app_name', APP_ID);
+    url.searchParams.set('source', 'premium_modal');
+    url.searchParams.set('return_to', tallyReturnUrl('premium_request_submitted'));
+    window.location.assign(url.toString());
+  }
+
+  function showTallyReturnNotice(message) {
+    document.getElementById('tallyReturnNotice')?.remove();
+    const notice = document.createElement('div');
+    notice.id = 'tallyReturnNotice';
+    notice.className = 'tally-return-notice';
+    notice.setAttribute('role', 'status');
+    notice.innerHTML = `<strong>${message}</strong><button type="button" aria-label="Dismiss confirmation">×</button>`;
+    document.body.appendChild(notice);
+    notice.querySelector('button').addEventListener('click', () => notice.remove());
   }
 
   function tallyFeedbackType(value) {
@@ -4049,9 +4075,7 @@ mean/nice
         }
       });
       this.$.premiumRequestToggle.addEventListener('click', () => {
-        const form = this.$.premiumRequestForm;
-        form.hidden = !form.hidden;
-        if (!form.hidden) this.$.premiumRequestName.focus();
+        openAccessPlans();
       });
       this.$.premiumRequestForm.addEventListener('submit', (e) => this.submitPremiumRequest(e));
 
@@ -4742,7 +4766,7 @@ mean/nice
         source: 'premium_modal',
         level: this.currentLevel === 'geometry' ? 'Geometry' : (this.currentLevel === 'spanish2' ? 'Spanish 2' : 'Spanish 1'),
         module: this.currentQuestion?.module || 'dashboard',
-        page_url: window.location.href
+        page_url: tallyReturnUrl('premium_request_submitted')
       });
       status.className = 'feedback good';
       status.textContent = 'Tally opened in a new tab. Submit your request there.';
@@ -4848,7 +4872,7 @@ mean/nice
         module: this.currentQuestion?.module || 'dashboard',
         source: 'feedback_button',
         dashboard: this.currentLevel === 'geometry' ? 'Geometry' : (this.currentLevel === 'spanish2' ? 'Spanish 2 Honors' : 'Spanish 1'),
-        page_url: window.location.href
+        page_url: tallyReturnUrl('feedback_submitted')
       });
       this.setFeedbackStatus('Tally opened in a new tab. Submit your feedback there.', 'good');
       return;
@@ -6983,6 +7007,18 @@ mean/nice
 
   window.addEventListener('DOMContentLoaded', () => {
     App.init();
+    const notice = new URLSearchParams(window.location.search).get('atlas_notice');
+    const messages = {
+      feedback_submitted: 'Feedback submitted — thanks for helping improve Atlas.',
+      premium_request_submitted: 'Premium request submitted — we’ll get in touch soon.',
+      moderator_application_submitted: 'Moderator application submitted — we’ll review it soon.'
+    };
+    if (messages[notice]) {
+      showTallyReturnNotice(messages[notice]);
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('atlas_notice');
+      window.history.replaceState({}, '', cleanUrl);
+    }
     const switcher = document.querySelector('.brand-switcher');
     const button = document.getElementById('appSwitcherButton');
     const menu = document.getElementById('appSwitcherMenu');

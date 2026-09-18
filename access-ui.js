@@ -32,11 +32,11 @@
 
     const panel = document.createElement('section');
     panel.id = 'moderationPanel'; panel.hidden = true; panel.className = 'moderation-panel';
-    panel.innerHTML = '<h3>Question management</h3><p id="moderationIntro">Request review of the current question or question type.</p><button class="secondary" id="requestDeletionBtn" type="button">Request deletion of current question</button><button class="secondary" id="requestTypeDeletionBtn" type="button">Request deletion of this question type</button><div id="moderationHistory"></div>';
+    panel.innerHTML = '<h3>Question management</h3><p id="moderationIntro">Moderators only review learning questions and question types. They can request removal when content is unnecessary, inaccurate, or out of scope for this app.</p><button class="secondary" id="requestDeletionBtn" type="button">Request removal of current question</button><button class="secondary" id="requestTypeDeletionBtn" type="button">Request removal of this question type</button><div id="moderationHistory"></div>';
     modal.appendChild(panel);
     const overlay = document.createElement('div');
     overlay.id = 'moderationRequestOverlay'; overlay.className = 'modal-overlay'; overlay.hidden = true;
-    overlay.innerHTML = '<section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="moderationRequestTitle"><div class="modal-heading"><div><h2 id="moderationRequestTitle">Request permanent deletion</h2><p>Describe the issue briefly. An administrator must review it.</p></div></div><form id="moderationRequestForm"><label>Reason<textarea id="moderationReason" maxlength="1000" required></textarea></label><div class="modal-actions"><button class="secondary" id="moderationCancel" type="button">Cancel</button><button class="primary" type="submit">Submit request</button></div><p id="moderationRequestStatus" class="feedback"></p></form></section>';
+    overlay.innerHTML = '<section class="modal compact" role="dialog" aria-modal="true" aria-labelledby="moderationRequestTitle"><div class="modal-heading"><div><h2 id="moderationRequestTitle">Request question removal</h2><p>An administrator will review this question request for this app.</p></div></div><form id="moderationRequestForm"><label>Why should this be removed?<textarea id="moderationReason" maxlength="1000" required placeholder="Explain what is unnecessary, inaccurate, or out of scope."></textarea></label><div class="modal-actions"><button class="secondary" id="moderationCancel" type="button">Cancel</button><button class="primary" type="submit">Submit request</button></div><p id="moderationRequestStatus" class="feedback"></p></form></section>';
     document.body.appendChild(overlay);
     let item = null;
     const current = (type) => {
