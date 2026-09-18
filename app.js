@@ -4835,13 +4835,12 @@ mean/nice
         this.setFeedbackStatus('Tally is not connected yet. Add the feedback form URL in app.js.', 'bad');
         return;
       }
-      const tallyMessage = feedbackType === 'module_request'
-        ? `Requested module: ${requestedModule}\n\n${message}`
-        : message;
+      const tallyType = tallyFeedbackType(feedbackType);
+      const tallyMessage = `Feedback type: ${tallyType}\n\n${feedbackType === 'module_request' ? `Requested module: ${requestedModule}\n\n` : ''}${message}`;
       openTallyForm(TALLY_FEEDBACK_URL, {
         form_type: 'feedback',
         app_name: APP_ID,
-        feedback_type: tallyFeedbackType(feedbackType),
+        feedback_type: tallyType,
         requested_module: requestedModule,
         message: tallyMessage,
         email,
