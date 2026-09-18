@@ -954,6 +954,9 @@
       .session-history-result{text-align:left}
     }
   
+.math-keyboard{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;padding:8px 10px;border:1px solid #d7e7db;border-radius:12px;background:#f6fbf7}
+.math-keyboard-label{margin-right:4px;color:#14532d;font-size:.78rem;font-weight:800}
+.math-keyboard .btn{min-width:34px;padding:5px 8px;font-weight:800}
 /* Premium modal parity: same Vertex structure and rhythm, Claro palette only. */
 .claro-premium-modal{width:min(540px,100%);padding:20px;border-radius:20px;background:#fff;box-shadow:0 24px 60px rgba(0,0,0,.28)}
 .claro-premium-modal .modal-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:13px;border-bottom:1px solid #dbe4ff}

@@ -1,148 +1,121 @@
-/* Vertex content adapter: keeps Claro's session UI while supplying Geometry data. */
+/* Vertex Geometry curriculum adapter. Source: scanned classroom PDFs in ../Canvas Geometry PDFs. */
 (() => {
   'use strict';
+
   const MODULES = [
-    ['unit-1','1-1','Points, Lines, and Planes','01-01_points-lines-planes_annotated.pdf'],
-    ['unit-1','1-3','Midpoint and Distance Formula','01-03_midpoint-and-distance-formula_annotated.pdf'],
-    ['unit-1','1-5','Measuring and Constructing Angles','01-05_measuring-angles_annotated.pdf, 01-05_more-measuring-angles_annotated.pdf'],
-    ['unit-1','1-6','Pairs of Angles','01-06_pairs-of-angles_annotated.pdf'],
-    ['unit-1','review','Test 1 Review','01-99_review-for-test-1_answers.pdf'],
-    ['unit-2','2-2','Inductive and Deductive Reasoning','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf'],
-    ['unit-2','2-4','Algebraic Reasoning','02-04_algebraic-reasoning_annotated.pdf'],
-    ['unit-2','2-5','Proving Statements about Segments and Angles','02-05_proving-segments-and-angles_annotated.pdf'],
-    ['unit-2','2-6','Proving Geometric Relationships','02-06_proving-geometric-relationships_annotated.pdf'],
-    ['unit-3','3-1','Pairs of Lines and Angles','03-01_pairs-of-lines-and-angles_blank.pdf']
-  ].map(([unit, section, name, sources]) => ({ key: `geometry-${section}`, unit, section, name, sources: sources.split(', ') }));
+    { key:'geometry-1-1', unit:'unit-1', section:'1.1', name:'Points, Lines, and Planes', sources:['01-01_points-lines-planes_annotated.pdf'], premium:false },
+    { key:'geometry-1-3', unit:'unit-1', section:'1.3', name:'Midpoint and Distance Formula', sources:['01-03_midpoint-and-distance-formula_annotated.pdf'], premium:false },
+    { key:'geometry-1-5', unit:'unit-1', section:'1.5', name:'Measuring and Constructing Angles', sources:['01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf'], premium:false },
+    { key:'geometry-1-6', unit:'unit-1', section:'1.6', name:'Pairs of Angles', sources:['01-06_pairs-of-angles_annotated.pdf'], premium:false },
+    { key:'geometry-review', unit:'unit-1', section:'1.99', name:'Test 1 Review', sources:['01-99_review-for-test-1_answers.pdf'], premium:false },
+    { key:'geometry-2-2', unit:'unit-2', section:'2.2', name:'Inductive and Deductive Reasoning', sources:['02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf'], premium:false },
+    { key:'geometry-2-4', unit:'unit-2', section:'2.4', name:'Algebraic Reasoning', sources:['02-04_algebraic-reasoning_annotated.pdf'], premium:false },
+    { key:'geometry-2-5', unit:'unit-2', section:'2.5', name:'Proving Statements about Segments and Angles', sources:['02-05_proving-segments-and-angles_annotated.pdf'], premium:false },
+    { key:'geometry-2-6', unit:'unit-2', section:'2.6', name:'Proving Geometric Relationships', sources:['02-06_proving-geometric-relationships_annotated.pdf'], premium:false },
+    { key:'geometry-3-1', unit:'unit-3', section:'3.1', name:'Pairs of Lines and Angles', sources:['03-01_pairs-of-lines-and-angles_blank.pdf'], premium:false },
+    { key:'geometry-3-2', unit:'unit-3', section:'3.2', name:'Parallel Lines and Transversals', sources:['03-02_parallel-lines-and-transversals_annotated.pdf'], premium:true },
+    { key:'geometry-3-3', unit:'unit-3', section:'3.3', name:'Proofs with Parallel Lines', sources:['03-03_proofs-with-parallel-lines_annotated.pdf'], premium:true },
+    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf'], premium:true }
+  ];
+  const byKey = Object.fromEntries(MODULES.map((module) => [module.key, module]));
+
+  // Shared, conservative normalization: presentation differences are harmless, but
+  // aliases remain explicit so incorrect mathematical answers are not accepted.
+  const normalize = (value) => String(value ?? '').normalize('NFKC').toLowerCase()
+    .replace(/[∠]/g,'angle ').replace(/[≅≡]/g,' congruent ').replace(/[√]/g,'sqrt ')
+    .replace(/[×]/g,' x ').replace(/[÷]/g,' / ').replace(/[≤]/g,' less than or equal to ')
+    .replace(/[≥]/g,' greater than or equal to ').replace(/[≠]/g,' not equal to ')
+    .replace(/[±]/g,' plus or minus ').replace(/[°]/g,' degree ')
+    .replace(/[^a-z0-9.+\-/\s]/g,' ').replace(/\s+/g,' ').trim();
+  const answerSet = (answers) => new Set((answers || []).flatMap((answer) => { const value = normalize(answer); return value ? [value] : []; }));
+  const makeQuestion = (id, prompt, answer, aliases = [], options = {}) => ({
+    id, mode:options.mode || 'text', prompt, expectedDisplay:answer,
+    acceptable:answerSet([answer, ...aliases]), explanation:options.explanation || 'Use the Geometry definition, postulate, property, or theorem from this section.',
+    ...(options.mode === 'mcq' ? { options:options.options, correctIndex:options.options.indexOf(answer) } : {})
+  });
+  const mcq = (id, prompt, answer, options) => makeQuestion(id, prompt, answer, [], { mode:'mcq', options });
+  const text = (answer) => String(answer);
   const QUESTIONS = {
-    'geometry-1-1': [['u1-1-point','What is an undefined term that names an exact location?', 'point'], ['u1-1-collinear','Points on the same line are called what?', 'collinear'], ['u1-1-ray','A part of a line with one endpoint that extends forever in one direction is a?', 'ray']],
-    'geometry-1-3': [['u1-3-midpoint','What formula finds the midpoint of a segment in the coordinate plane?', 'midpoint formula'], ['u1-3-distance','What theorem/formula supports finding distance between two coordinate points?', 'distance formula']],
-    'geometry-1-5': [['u1-5-addition','If D is inside ∠ABC, what postulate gives m∠ABD + m∠DBC = m∠ABC?', 'angle addition postulate'], ['u1-5-bisect','If BD bisects ∠ABC, what relationship is true?', 'm∠ABD = m∠DBC'], ['u1-5-congruent','If BD bisects ∠ABC, what congruence statement is true?', '∠ABD ≅ ∠DBC']],
-    'geometry-1-6': [['u1-6-vertical','Which angle relationship is always congruent?', 'vertical angles'], ['u1-6-linear','Adjacent angles that form a line are a?', 'linear pair'], ['u1-6-complementary','Complementary angles have measures that add to?', '90'], ['u1-6-supplementary','Supplementary angles have measures that add to?', '180']],
-    'geometry-review': [['review-linear','What postulate describes adjacent angles that form a line?', 'linear pair postulate'], ['review-midpoint','A point dividing a segment into two congruent segments is its?', 'midpoint']],
-    'geometry-2-2': [['u2-2-inductive','Reasoning that uses patterns to form a conjecture is?', 'inductive reasoning'], ['u2-2-counterexample','An example that proves a conjecture false is a?', 'counterexample'], ['u2-2-deductive','Reasoning that uses facts, definitions, postulates, and theorems is?', 'deductive reasoning']],
-    'geometry-2-4': [['u2-4-segment','What postulate says that if B is between A and C, AB + BC = AC?', 'segment addition postulate'], ['u2-4-substitution','What property permits replacing equal values in an equation?', 'substitution property of equality'], ['u2-4-reflexive','What property states a quantity is equal to itself?', 'reflexive property of equality'], ['u2-4-proof','What are the two columns in a 2-Column Proof?', 'statements and reasons']],
-    'geometry-2-5': [['u2-5-symmetric','If AB ≅ CD, then CD ≅ AB. Name the property.', 'symmetric property of congruence'], ['u2-5-transitive','If AB ≅ CD and CD ≅ RT, then AB ≅ RT. Name the property.', 'transitive property of congruence'], ['u2-5-definition','If AB ≅ CD, then AB = CD. Name the reason.', 'definition of congruent segments']],
-    'geometry-2-6': [['u2-6-vertical','What theorem proves vertical angles are congruent?', 'vertical angle theorem'], ['u2-6-supplements','What theorem says angles supplementary to the same angle are congruent?', 'congruent supplements theorem'], ['u2-6-complements','What theorem says angles complementary to the same angle are congruent?', 'congruent complements theorem']],
-    'geometry-3-1': [['u3-1-perpendicular','Lines that intersect to form right angles are?', 'perpendicular lines'], ['u3-1-transversal','A line that intersects two or more coplanar lines is a?', 'transversal']]
+    'geometry-1-1': [
+      makeQuestion('u1-1-point','What undefined term names an exact location?','point'), makeQuestion('u1-1-line','What undefined term extends forever in two opposite directions?','line'), makeQuestion('u1-1-plane','What undefined term is a flat surface with two dimensions?','plane'), makeQuestion('u1-1-segment','A part of a line with two endpoints is a?','line segment',['segment']), makeQuestion('u1-1-ray','A part of a line with one endpoint that extends forever in one direction is a?','ray'), makeQuestion('u1-1-collinear','Points on the same line are called?','collinear points',['collinear']), makeQuestion('u1-1-coplanar','Points on the same plane are called?','coplanar points',['coplanar']), makeQuestion('u1-1-opposite-rays','Two rays with a common endpoint extending in opposite directions form a?','line'), mcq('u1-1-line-notation','Through two points, there is exactly one ___.','line',['line','plane','ray','angle']), makeQuestion('u1-1-ray-order','For ray notation, which letter is written first?','endpoint',['the endpoint','first letter'])
+    ],
+    'geometry-1-3': [
+      makeQuestion('u1-3-midpoint','What formula finds the midpoint of A(x₁,y₁) and B(x₂,y₂)?','( (x₁+x₂)/2, (y₁+y₂)/2 )',['midpoint formula','(x1+x2)/2, (y1+y2)/2']), makeQuestion('u1-3-midpoint-numeric','What is the midpoint of J(-3,2) and K(9,2)?','(3,2)',['3, 2','(3, 2)']), makeQuestion('u1-3-other-endpoint','If M(-2,5) is the midpoint and H(-3,7) is one endpoint, what is the other endpoint?','(-1,3)',['-1, 3','(-1, 3)']), makeQuestion('u1-3-distance','What formula finds the distance between two coordinate points?','distance formula'), makeQuestion('u1-3-pythagorean','What theorem can also find coordinate distance using horizontal and vertical legs?','Pythagorean Theorem',['pythagorean theorem']), makeQuestion('u1-3-distance-numeric','Find the distance between (2,5) and (4,-1). Give the exact answer.','2√10',['2 sqrt 10','sqrt 40','√40'])
+    ],
+    'geometry-1-5': [
+      mcq('u1-5-acute','An angle measuring 35° is what type?','acute',['acute','right','obtuse','straight']), mcq('u1-5-right','An angle measuring exactly 90° is what type?','right',['acute','right','obtuse','straight']), makeQuestion('u1-5-obtuse','What range describes an obtuse angle?','greater than 90° and less than 180°',['90 to 180 degrees','between 90 and 180 degrees']), makeQuestion('u1-5-straight','A straight angle always measures?','180°',['180','180 degrees']), makeQuestion('u1-5-addition','If D is inside ∠ABC, what postulate gives m∠ABD + m∠DBC = m∠ABC?','Angle Addition Postulate'), makeQuestion('u1-5-bisector','If BD bisects ∠ABC, what equality of measures is true?','m∠ABD = m∠DBC',['m angle abd = m angle dbc']), makeQuestion('u1-5-congruent','If BD bisects ∠ABC, what congruence statement is true?','∠ABD ≅ ∠DBC',['angle abd congruent angle dbc']), makeQuestion('u1-5-angle-parts','Name the two sides and the vertex of ∠2 in the diagram language from the notes.','rays BA and BC',['BA and BC','ray BA and ray BC']), makeQuestion('u1-5-bisector-value','If m∠ABD = 4x+2 and m∠DBC = 3x-7, and BD bisects the angle, what is x?','9',['x = 9'])
+    ],
+    'geometry-1-6': [
+      makeQuestion('u1-6-vertical','Which angle relationship is always congruent?','vertical angles'), makeQuestion('u1-6-adjacent','Adjacent angles share a vertex and a common ___.','side'), makeQuestion('u1-6-complementary','Complementary angles have measures that add to?','90°',['90','90 degrees']), makeQuestion('u1-6-supplementary','Supplementary angles have measures that add to?','180°',['180','180 degrees']), makeQuestion('u1-6-linear','Adjacent angles that form a line are a?','linear pair'), makeQuestion('u1-6-linear-properties','A linear pair is adjacent and its angles are what?','supplementary',['supplementary angles']), makeQuestion('u1-6-complement-example','If one complementary angle is 60°, what is the other?','30°',['30','30 degrees']), makeQuestion('u1-6-supplement-example','If one supplementary angle is 150°, what is the other?','30°',['30','30 degrees'])
+    ],
+    'geometry-review': [makeQuestion('review-collinear','Name a point collinear with A, D, and G in the review diagram.','B'), makeQuestion('review-midpoint','A point dividing a segment into two congruent segments is its?','midpoint'), makeQuestion('review-distance','What is the distance between (5,6) and (1,3)?','5 units',['5','5 unit']), makeQuestion('review-angle-names','Name three angles in the diagram with vertex Q.','∠PQR, ∠RQS, and ∠PQS',['angle pqr angle rqs and angle pqs']), makeQuestion('review-linear','What postulate describes adjacent angles that form a line?','Linear Pair Postulate'), makeQuestion('review-supplement','If m∠WXY = (6x+59)° and m∠YXZ = (3x-14)° are supplementary, what is x?','15',['x = 15'])],
+    'geometry-2-2': [makeQuestion('u2-2-conjecture','An unproven statement based on observations is a?','conjecture'), makeQuestion('u2-2-counterexample','An example that proves a conjecture false is a?','counterexample'), makeQuestion('u2-2-inductive','Reasoning that uses patterns to form a conjecture is?','inductive reasoning'), makeQuestion('u2-2-deductive','Reasoning that uses facts, definitions, postulates, and theorems is?','deductive reasoning'), makeQuestion('u2-2-false','To disprove a universal conjecture, how many counterexamples are needed?','one',['1','one counterexample']), mcq('u2-2-product','A conjecture says the product of any three negative integers is negative. Is it true or false?','true',['true','false'])],
+    'geometry-2-4': [makeQuestion('u2-4-segment','What postulate says that if B is between A and C, AB + BC = AC?','Segment Addition Postulate'), makeQuestion('u2-4-angle','What postulate says adjacent angle measures add to the whole angle?','Angle Addition Postulate'), makeQuestion('u2-4-addition','If a=b, then a+c=b+c uses which property?','Addition Property of Equality'), makeQuestion('u2-4-subtraction','If a=b, then a-c=b-c uses which property?','Subtraction Property of Equality'), makeQuestion('u2-4-multiplication','If a=b, then ac=bc uses which property?','Multiplication Property of Equality'), makeQuestion('u2-4-division','If a=b and c≠0, then a/c=b/c uses which property?','Division Property of Equality'), makeQuestion('u2-4-substitution','What property permits replacing equal values in an equation?','Substitution Property of Equality'), makeQuestion('u2-4-reflexive','What property states a quantity is equal to itself?','Reflexive Property of Equality'), makeQuestion('u2-4-symmetric','If a=b, then b=a uses which property?','Symmetric Property of Equality'), makeQuestion('u2-4-transitive','If a=b and b=c, then a=c uses which property?','Transitive Property of Equality'), makeQuestion('u2-4-distributive','What property expands a(b+c) into ab+ac?','Distributive Property'), makeQuestion('u2-4-proof-columns','What are the two columns in a 2-Column Proof?','statements and reasons')],
+    'geometry-2-5': [makeQuestion('u2-5-reflexive','If AB ≅ AB, which property of congruence is shown?','Reflexive Property of Congruence'), makeQuestion('u2-5-symmetric','If AB ≅ CD, then CD ≅ AB. Name the property.','Symmetric Property of Congruence'), makeQuestion('u2-5-transitive','If AB ≅ CD and CD ≅ RT, then AB ≅ RT. Name the property.','Transitive Property of Congruence'), makeQuestion('u2-5-definition-segments','If AB ≅ CD, then AB = CD. Name the reason.','Definition of Congruent Segments'), makeQuestion('u2-5-definition-angles','If ∠A ≅ ∠B, then m∠A = m∠B. Name the reason.','Definition of Congruent Angles'), makeQuestion('u2-5-bisector','A segment bisector divides a segment into two what segments?','congruent'), makeQuestion('u2-5-proof-given','In a proof, information supplied in the problem is called the?','given')],
+    'geometry-2-6': [makeQuestion('u2-6-vertical','What theorem proves vertical angles are congruent?','Vertical Angle Theorem'), makeQuestion('u2-6-supplements','What theorem says angles supplementary to the same angle are congruent?','Congruent Supplements Theorem'), makeQuestion('u2-6-complements','What theorem says angles complementary to the same angle are congruent?','Congruent Complements Theorem'), makeQuestion('u2-6-linear-pair','What postulate says angles in a linear pair are supplementary?','Linear Pair Postulate'), makeQuestion('u2-6-transitive','Which property can connect ∠1 ≅ ∠3 and ∠3 ≅ ∠4 to prove ∠1 ≅ ∠4?','Transitive Property of Congruence'), makeQuestion('u2-6-proof-reason','In a two-column proof, definitions, postulates, theorems, and properties belong in the?','reasons column')],
+    'geometry-3-1': [mcq('u3-1-parallel','Lines in the same plane that never intersect are?','parallel lines',['parallel lines','perpendicular lines','skew lines','transversal']), makeQuestion('u3-1-perpendicular','Lines that intersect to form right angles are?','perpendicular lines'), makeQuestion('u3-1-skew','Lines that do not intersect and are not coplanar are?','skew lines'), makeQuestion('u3-1-transversal','A line that intersects two or more coplanar lines is a?','transversal'), makeQuestion('u3-1-intersecting-planes','Two planes that meet intersect at a?','line'), makeQuestion('u3-1-nonparallel','When a transversal crosses two non-parallel lines, corresponding angles are not guaranteed to be what?','congruent',['equal'])],
+    'geometry-3-2': [mcq('u3-2-alternate-interior','When parallel lines are cut by a transversal, alternate interior angles are?','congruent',['congruent','supplementary','complementary','vertical']), makeQuestion('u3-2-alternate-exterior','When parallel lines are cut by a transversal, alternate exterior angles are?','congruent',['congruent angles']), makeQuestion('u3-2-corresponding','When parallel lines are cut by a transversal, corresponding angles are?','congruent',['congruent angles']), makeQuestion('u3-2-consecutive-interior','Consecutive interior (same-side interior) angles are?','supplementary',['supplementary angles']), makeQuestion('u3-2-consecutive-exterior','Consecutive exterior (same-side exterior) angles are?','supplementary',['supplementary angles']), makeQuestion('u3-2-equation','If consecutive interior angles measure (x+120)° and (3y+6)° in the notes, what is x?','60',['x = 60']), makeQuestion('u3-2-corresponding-equation','If corresponding angles are 60° and (3y+6)°, what is y?','18',['y = 18']), makeQuestion('u3-2-proof','Given k ∥ n, which theorem can prove a pair of alternate interior angles congruent?','Alternate Interior Angles Theorem')],
+    'geometry-3-3': [makeQuestion('u3-3-transitive-parallel','If a ∥ b and b ∥ c, then a ∥ c. Name the theorem.','Transitive Property of Parallel Lines Theorem'), makeQuestion('u3-3-alt-interior-converse','If alternate interior angles are congruent, then the lines are?','parallel'), makeQuestion('u3-3-alt-exterior-converse','If alternate exterior angles are congruent, then the lines are?','parallel'), makeQuestion('u3-3-corresponding-converse','If corresponding angles are congruent, then the lines are?','parallel'), makeQuestion('u3-3-consecutive-interior-converse','If consecutive interior angles are supplementary, then the lines are?','parallel'), makeQuestion('u3-3-consecutive-exterior-converse','If consecutive exterior angles are supplementary, then the lines are?','parallel'), makeQuestion('u3-3-proof-reason','In the annotated proof, which theorem finishes the converse argument from congruent corresponding angles?','Corresponding Angles Converse Theorem'), makeQuestion('u3-3-equation','If 4(x+5)° and 72° are consecutive exterior angles, what is x?','22',['x = 22'])],
+    'geometry-reference': [makeQuestion('ref-point','An exact location with no size or dimension is a?','point'), makeQuestion('ref-line','A set of points extending forever in two directions is a?','line'), makeQuestion('ref-plane','A flat surface with no thickness extending in two dimensions is a?','plane'), makeQuestion('ref-conjecture','An unproven statement based on observations is a?','conjecture'), makeQuestion('ref-counterexample','An example that disproves a conjecture is a?','counterexample'), makeQuestion('ref-segment-addition','AB + BC = AC when B is between A and C is the?','Segment Addition Postulate'), makeQuestion('ref-angle-addition','m∠ABD + m∠DBC = m∠ABC is the?','Angle Addition Postulate'), makeQuestion('ref-vertical','Vertical angles are congruent by the?','Vertical Angle Theorem'), makeQuestion('ref-linear-pair','A linear pair is supplementary by the?','Linear Pair Postulate'), makeQuestion('ref-congruent-supplements','Angles supplementary to the same angle are congruent by the?','Congruent Supplements Theorem'), makeQuestion('ref-congruent-complements','Angles complementary to the same angle are congruent by the?','Congruent Complements Theorem'), makeQuestion('ref-definition-congruent','Congruent segments have equal lengths by the?','Definition of Congruent Segments'), makeQuestion('ref-reflexive','A quantity equal to itself uses the?','Reflexive Property of Equality'), makeQuestion('ref-symmetric','If a=b then b=a uses the?','Symmetric Property of Equality'), makeQuestion('ref-transitive','If a=b and b=c then a=c uses the?','Transitive Property of Equality'), makeQuestion('ref-distributive','a(b+c)=ab+ac is the?','Distributive Property'), makeQuestion('ref-parallel','Lines that never intersect in a plane are?','parallel lines'), makeQuestion('ref-perpendicular','Lines that form right angles are?','perpendicular lines'), makeQuestion('ref-transversal','A line intersecting two or more coplanar lines is a?','transversal'), makeQuestion('ref-corresponding','For parallel lines cut by a transversal, corresponding angles are?','congruent'), makeQuestion('ref-same-side','For parallel lines cut by a transversal, same-side interior angles are?','supplementary'), makeQuestion('ref-converse','The converse of a parallel-lines angle theorem is used to prove the lines are?','parallel')]
   };
-  const normalize = (value) => String(value).toLowerCase().replace(/[∠≅.,?]/g, '').replace(/\s+/g, ' ').trim();
-  document.addEventListener('DOMContentLoaded', () => { setTimeout(() => {
-    const app = window.SpanishPracticeApp;
-    if (!app) return;
-    window.VertexApp = app;
-    document.title = 'Vertex — Accelerated Geometry';
-    document.documentElement.style.setProperty('--accent', '#166534');
-    document.querySelectorAll('#brandName, .app-switcher-menu a.is-current span').forEach((node) => { if (node) node.textContent = 'Vertex'; });
-    const subtitle = document.getElementById('subtitle'); if (subtitle) subtitle.textContent = 'Accelerated Geometry';
-    const header = document.getElementById('headerLevel'); if (header) header.textContent = 'Accelerated Geometry';
-    const classSwitcher = document.querySelector('.dashboard-switcher'); if (classSwitcher) classSwitcher.hidden = true;
-    const homeHeading = document.querySelector('#homeCard > .home-copy h1, #homeCard h1'); if (homeHeading) homeHeading.textContent = 'Practice Accelerated Geometry';
-    const homeLead = document.querySelector('#homeCard > .home-copy > p:not(.eyebrow), #homeCard .home-copy > p:not(.eyebrow)'); if (homeLead) homeLead.textContent = 'Choose sections, then start a focused geometry session.';
-    document.querySelectorAll('.app-switcher-menu .is-current small, #classSwitcherLabel, #headerLevel').forEach((node) => { node.textContent = 'Accelerated Geometry'; });
-    document.querySelectorAll('small, p, span, button').forEach((node) => {
-      if (node.children.length) return;
-      if (node.textContent.trim() === 'Spanish 1') node.textContent = 'Accelerated Geometry';
-      if (node.textContent.trim() === 'Choose a level. Start practicing.') node.textContent = 'Choose sections. Start practicing.';
-      if (node.textContent.trim() === 'Enter practice session') node.textContent = 'Enter geometry session';
-    });
-    const tabs = document.querySelector('.level-tabs'); if (tabs) tabs.hidden = true;
-    const panel2 = document.getElementById('spanish2Panel'); if (panel2) panel2.hidden = true;
-    const panel = document.getElementById('spanish1Panel');
-    const geometryMarkup = ['unit-1','unit-2','unit-3'].map((unit, index) => `<details class="module-group" open><summary>Unit ${index + 1}</summary><div class="module-group-content">${MODULES.filter((m) => m.unit === unit).map((m) => `<div class="toggle"><div><div class="label">${m.section} ${m.name}</div><div class="desc">Practice questions from this geometry section.</div></div><label><input type="checkbox" data-geometry-module="${m.key}" aria-label="Toggle ${m.section} ${m.name} module" checked><span class="switch" aria-hidden="true"></span></label></div>`).join('')}</div></details>`).join('');
-    if (panel) {
-      // Keep Claro's dashboard structure and hierarchy. Only the content is Vertex-specific.
-      panel.innerHTML = '<div class="home-overview-card"><span class="home-overview-label">Ready to practice</span><strong id="homeModuleSummary">Geometry sections</strong><small>Enabled sections are used when you choose All enabled modules.</small></div><div class="home-overview-card home-overview-card-muted"><span class="home-overview-label">Simple by default</span><strong>One question at a time</strong><small>Your progress stays in this browser.</small></div>';
-    }
-    const settingsModules = document.getElementById('moduleSettingsSection');
-    if (settingsModules) {
-      settingsModules.innerHTML = `<div class="module-settings-heading"><strong>Geometry modules</strong><small>Select the sections you want to practice.</small></div>${geometryMarkup}`;
-      const saved = app.state?.geometryModules || {};
-      settingsModules.querySelectorAll('[data-geometry-module]').forEach((box) => {
-        box.checked = saved[box.dataset.geometryModule] !== false;
-        box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...settingsModules.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); app.saveSoon(); });
-      });
-    }
-    // The shared shell still contains Claro's Spanish-only behavior controls and
-    // diagnostics. Keep their DOM hooks intact for the shared app code, but do
-    // not expose misleading controls or test language in Vertex.
-    const practiceBehavior = document.getElementById('practiceBehaviorSettings');
-    if (practiceBehavior) practiceBehavior.hidden = true;
-    const keyboardHelp = [...document.querySelectorAll('.settings-accordion')].find((node) => /Keyboard\s*&\s*Help/i.test(node.querySelector('summary')?.textContent || ''));
-    if (keyboardHelp) {
-      const summary = keyboardHelp.querySelector('summary');
-      if (summary) summary.innerHTML = 'Geometry keyboard help <span class="summary-note">Optional</span>';
-      const copy = keyboardHelp.querySelector('.small.muted');
-      if (copy) copy.textContent = 'Space reveals a hint when the answer field is not focused. Enter submits a geometry answer.';
-    }
-    const checks = [...document.querySelectorAll('.settings-accordion')].find((node) => /Developer\s*Checks/i.test(node.querySelector('summary')?.textContent || ''));
-    if (checks) {
-      const summary = checks.querySelector('summary');
-      if (summary) summary.innerHTML = 'Vertex checks <span class="summary-note">Advanced</span>';
-      const debugLabel = checks.querySelector('label[for="toggleDebugMode"]') || checks.querySelector('#toggleDebugMode')?.closest('label');
-      if (debugLabel) debugLabel.innerHTML = '<input type="checkbox" id="toggleDebugMode" aria-label="Enable Vertex debug mode" />&nbsp;Verbose Vertex logs';
-      const runButton = checks.querySelector('#runChecksBtn');
-      if (runButton) { runButton.textContent = 'Run geometry checks'; runButton.setAttribute('aria-label', 'Run Vertex geometry checks'); }
-      const output = checks.querySelector('#checksOutput');
-      if (output) output.textContent = 'Vertex geometry checks not run yet.';
-    }
-    const premiumFeedback = document.getElementById('premiumFeedback');
-    if (premiumFeedback) premiumFeedback.textContent = 'Vertex access is verified securely when this app is deployed with its server configuration.';
-    const feedbackCopy = document.querySelector('#feedbackOverlay .modal-heading p');
-    if (feedbackCopy) feedbackCopy.textContent = 'Ideas and geometry module requests help shape Vertex.';
-    app.setLevel('geometry', { historyMode: 'replace' });
-    // Access-session refreshes can re-render the shared Claro header after this adapter runs.
-    // Re-apply Vertex labels whenever that shared UI refreshes so the subject branding stays stable.
-    const applyVertexLabels = () => {
-      const headerLabel = document.getElementById('headerLevel');
-      const classLabel = document.getElementById('classSwitcherLabel');
-      if (headerLabel) headerLabel.textContent = 'Accelerated Geometry';
-      if (classLabel) classLabel.textContent = 'Accelerated Geometry';
-    };
-    if (typeof app.refreshSettingsUI === 'function') {
-      const refreshSettingsUI = app.refreshSettingsUI.bind(app);
-      app.refreshSettingsUI = (...args) => { const result = refreshSettingsUI(...args); app.currentLevel = 'geometry'; applyVertexLabels(); return result; };
-    }
-    applyVertexLabels();
-    app.getEnabledModules = () => MODULES.filter((m) => app.state?.geometryModules?.[m.key] !== false).map((m) => m.key);
+
+  const poolFor = (app, key) => (QUESTIONS[key] || []).filter((item) => !app.state?.hiddenItems?.[item.id]);
+  const enabledKeys = (app) => MODULES.filter((module) => !module.premium || app.hasPremiumAccess?.()).map((module) => module.key);
+  const PREF_COOKIE = 'vertex_geometry_preferences_v1';
+  const readPreferences = () => {
+    try { const raw = document.cookie.split('; ').find((part) => part.startsWith(`${PREF_COOKIE}=`)); return raw ? JSON.parse(decodeURIComponent(raw.slice(PREF_COOKIE.length + 1))) : {}; } catch (_) { return {}; }
+  };
+  const writePreferences = (preferences) => { try { document.cookie = `${PREF_COOKIE}=${encodeURIComponent(JSON.stringify(preferences))}; max-age=31536000; path=/; SameSite=Lax`; } catch (_) {} };
+
+  function installMathKeyboard() {
+    const block = document.getElementById('textBlock'); const input = document.getElementById('answerInput');
+    if (!block || !input || document.getElementById('vertexMathKeyboard')) return;
+    const keyboard = document.createElement('div'); keyboard.id = 'vertexMathKeyboard'; keyboard.className = 'math-keyboard'; keyboard.setAttribute('aria-label','Math symbols');
+    const symbols = ['√','π','°','×','÷','≤','≥','≠','±','⁄','x²'];
+    keyboard.innerHTML = `<span class="math-keyboard-label">Math symbols</span>${symbols.map((symbol) => `<button type="button" class="btn small" data-math-symbol="${symbol}" aria-label="Insert ${symbol}">${symbol}</button>`).join('')}`;
+    block.prepend(keyboard);
+    keyboard.addEventListener('click', (event) => { const button = event.target.closest('[data-math-symbol]'); if (!button) return; const symbol = button.dataset.mathSymbol; const start = input.selectionStart ?? input.value.length; const end = input.selectionEnd ?? input.value.length; input.value = `${input.value.slice(0,start)}${symbol}${input.value.slice(end)}`; input.focus(); input.setSelectionRange(start + symbol.length, start + symbol.length); });
+    window.VertexMathKeyboard = { insert:(symbol) => keyboard.querySelector(`[data-math-symbol="${symbol}"]`)?.click() };
+  }
+
+  function renderSettings(app) {
+    const section = document.getElementById('moduleSettingsSection'); if (!section) return;
+    const unlocked = !!app.hasPremiumAccess?.(); const preferences = readPreferences(); const saved = app.state?.geometryModules || preferences.modules || {};
+    const heading = '<div class="module-settings-heading"><strong>Geometry modules</strong><small>Free sections stay available. Premium sections unlock parallel-lines and reference practice.</small></div>';
+    const markup = ['unit-1','unit-2','unit-3','reference'].map((unit) => {
+      const label = unit === 'reference' ? 'Reference' : `Unit ${unit.slice(-1)}`;
+      const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; return `<div class="toggle${locked ? ' module-locked' : ''}"><div><div class="label">${module.section} ${module.name}${locked ? ' 🔒' : ''}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${QUESTIONS[module.key].length} questions${locked ? ' · Premium' : ''}</div></div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
+      return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
+    }).join('');
+    section.innerHTML = heading + markup;
+    section.querySelectorAll('[data-geometry-module]:not(:disabled)').forEach((box) => box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...section.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); writePreferences({ ...readPreferences(), modules: app.state.geometryModules }); app.saveSoon(); app.updateHomeSummary?.(); }));
+    section.querySelectorAll('details.module-group').forEach((group) => group.addEventListener('toggle', () => { const groups = { ...readPreferences().groups, [group.querySelector('summary').textContent === 'Reference' ? 'reference' : `unit-${group.querySelector('summary').textContent.slice(-1)}`]: group.open }; writePreferences({ ...readPreferences(), groups }); }));
+  }
+
+  function labels() {
+    document.title = 'Vertex — Accelerated Geometry'; document.documentElement.style.setProperty('--accent','#166534');
+    document.querySelectorAll('#brandName, .app-switcher-menu a.is-current span').forEach((node) => { node.textContent = 'Vertex'; });
+    ['subtitle','headerLevel','classSwitcherLabel'].forEach((id) => { const node = document.getElementById(id); if (node) node.textContent = 'Accelerated Geometry'; });
+    const heading = document.querySelector('#homeCard h1'); if (heading) heading.textContent = 'Practice Accelerated Geometry';
+    const lead = document.querySelector('#homeCard .home-intro'); if (lead) lead.textContent = 'Choose sections, then start a focused geometry session.';
+    document.querySelector('.dashboard-switcher')?.setAttribute('hidden',''); document.querySelector('.level-switch')?.setAttribute('hidden',''); document.getElementById('spanish2Panel')?.setAttribute('hidden',''); document.getElementById('practiceBehaviorSettings')?.setAttribute('hidden',''); document.getElementById('accentToolbar')?.setAttribute('hidden','');
+    const input = document.getElementById('answerInput'); if (input) input.placeholder = 'Type a geometry answer...';
+    const enter = document.getElementById('enterPracticeBtn'); if (enter) { enter.innerHTML = 'Enter geometry session <span aria-hidden="true">→</span>'; enter.setAttribute('aria-label','Enter geometry session'); }
+    const help = [...document.querySelectorAll('.settings-accordion')].find((node) => /Keyboard\s*&\s*Help/i.test(node.querySelector('summary')?.textContent || '')); if (help) { help.querySelector('summary').innerHTML = 'Geometry keyboard help <span class="summary-note">Optional</span>'; help.querySelector('.small.muted').textContent = 'Use the math symbol keyboard when notation is helpful. Enter submits your answer.'; }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
+    const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' });
+    app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && QUESTIONS[key]?.length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
-    app.updateHomeSummary = () => {
-      const summary = document.getElementById('homeModuleSummary');
-      if (!summary) return;
-      const names = MODULES.filter((module) => app.state?.geometryModules?.[module.key] !== false).map((module) => module.name);
-      summary.textContent = names.length ? names.join(', ') : 'No sections selected yet';
-    };
-    app.getModuleCounts = (key) => ({ total: (QUESTIONS[key] || []).length, available: (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]).length });
-    const runGeometryChecks = () => {
-      const results = MODULES.map((module) => {
-        const question = QUESTIONS[module.key]?.[0];
-        return { ok: Boolean(question), label: `${module.section} ${module.name} questions registered` };
-      });
-      results.push({ ok: app.getEnabledModules().every((key) => Boolean(QUESTIONS[key]),), label: 'Enabled geometry sections have question pools' });
-      const pass = results.filter((result) => result.ok).length;
-      const output = document.getElementById('checksOutput');
-      if (output) { output.className = `feedback ${pass === results.length ? 'good' : 'bad'}`; output.innerHTML = `${results.map((result) => `${result.ok ? '✓' : '✗'} ${result.label}`).join('<br>')}<br><small>Summary: ${pass}/${results.length} passed</small>`; }
-      return { pass, total: results.length, results };
-    };
-    app.runAutomatedChecks = runGeometryChecks;
-    app.generateQuestion = (key) => {
-      const choices = (QUESTIONS[key] || []).filter(([id]) => !app.state.hiddenItems[id]);
-      const item = choices[Math.floor(Math.random() * choices.length)]; if (!item) return null;
-      const [id, prompt, answer] = item;
-      return { module: key, id, mode: 'text', prompt, expectedDisplay: answer, acceptable: new Set([normalize(answer)]), explanation: 'Use the exact classroom terminology from this section.' };
-    };
-    const renderQuestion = app.renderQuestion.bind(app);
-    app.renderQuestion = (question, options) => {
-      renderQuestion(question, options);
-      const name = MODULES.find((module) => module.key === question?.module)?.name;
-      if (name && app.$.qaTitle) app.$.qaTitle.textContent = name;
-      if (app.$.answerInput) app.$.answerInput.placeholder = 'Type your answer...';
-    };
-    if (app.$.accentToolbar) app.$.accentToolbar.hidden = true;
-    if (app.$.keyHintStrip) app.$.keyHintStrip.hidden = true;
-    if (app.$.answerInput) app.$.answerInput.placeholder = 'Type your answer...';
-    app.getSessionTarget = () => window.VertexApp?.hasPremiumAccess?.() ? 18 : 10;
-    app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; };
-    const enter = document.getElementById('enterPracticeBtn'); if (enter) { enter.textContent = 'Enter geometry session →'; enter.setAttribute('aria-label', 'Enter geometry session'); }
-    app.refreshSettingsUI?.();
-  }, 0); });
+    app.getModuleCounts = (key) => ({ total:(QUESTIONS[key] || []).length, available:poolFor(app,key).length });
+    app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const item = pool[Math.floor(Math.random() * pool.length)]; return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };
+    app.updateHomeSummary = () => { const node = document.getElementById('homeModuleSummary'); if (node) node.textContent = app.getEnabledModules().map((key) => byKey[key].name).join(', ') || 'No sections selected yet'; };
+    app.getSessionTarget = () => app.hasPremiumAccess() ? 18 : 10;
+    const originalRefresh = app.refreshSettingsUI.bind(app); app.refreshSettingsUI = (...args) => { const result = originalRefresh(...args); labels(); renderSettings(app); app.updateHomeSummary(); return result; };
+    const originalRender = app.renderQuestion.bind(app); app.renderQuestion = (question, options) => { originalRender(question, options); const title = document.getElementById('qaTitle'); if (title) title.textContent = byKey[question?.module]?.name || 'Geometry'; document.getElementById('answerInput')?.setAttribute('placeholder','Type a geometry answer...'); };
+    window.VertexMathAnswer = { normalize, answerSet }; installMathKeyboard(); renderSettings(app); app.updateHomeSummary();
+    app.runAutomatedChecks = () => { const results = MODULES.map((module) => ({ ok:(QUESTIONS[module.key] || []).length >= 6, label:`${module.name} has a varied question bank` })); results.push({ ok:MODULES.every((module) => module.sources.length > 0), label:'All modules retain PDF source references' }); results.push({ ok:normalize('  CONGRUENT   ANGLES. ') === 'congruent angles', label:'Answer normalization ignores case, spacing, and punctuation' }); results.push({ ok:normalize('√40') === 'sqrt 40' && normalize('90°') === '90 degree', label:'Math notation normalization is installed' }); const output = document.getElementById('checksOutput'); if (output) { const passed = results.filter((item) => item.ok).length; output.className = `feedback ${passed === results.length ? 'good' : 'bad'}`; output.innerHTML = `${results.map((item) => `${item.ok ? '✓' : '✗'} ${item.label}`).join('<br>')}<br><small>Summary: ${passed}/${results.length} passed</small>`; } return { pass:results.filter((item) => item.ok).length, total:results.length, results }; };
+    app.refreshSettingsUI();
+  }, 0));
 })();

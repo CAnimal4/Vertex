@@ -46,6 +46,7 @@
   const PROFILE_COOKIE_KEY = 'claro_profile_id';
   const APP_VERSION = 2;
   const ANALYTICS_VERSION = 2;
+  const APP_ID = 'vertex';
   // Paste the public Tally form URLs here after creating the two forms.
   // Example: https://tally.so/r/xxxxxx
   const TALLY_FEEDBACK_URL = 'https://tally.so/r/68grLO';
@@ -4735,12 +4736,12 @@ mean/nice
       }
       openTallyForm(TALLY_PREMIUM_URL, {
         form_type: 'premium_access_request',
-        app_name: 'claro',
+        app_name: APP_ID,
         name: this.$.premiumRequestName.value.trim(),
         email: this.$.premiumRequestEmail.value.trim(),
         source: 'premium_modal',
-        current_level: this.currentLevel === 'spanish2' ? 'Spanish 2' : 'Spanish 1',
-        current_module: this.currentQuestion?.module || 'dashboard',
+        level: this.currentLevel === 'geometry' ? 'Geometry' : (this.currentLevel === 'spanish2' ? 'Spanish 2' : 'Spanish 1'),
+        module: this.currentQuestion?.module || 'dashboard',
         page_url: window.location.href
       });
       status.className = 'feedback good';
@@ -4839,15 +4840,15 @@ mean/nice
         : message;
       openTallyForm(TALLY_FEEDBACK_URL, {
         form_type: 'feedback',
-        app_name: 'claro',
+        app_name: APP_ID,
         feedback_type: tallyFeedbackType(feedbackType),
         requested_module: requestedModule,
         message: tallyMessage,
         email,
-        level: this.currentLevel === 'spanish2' ? 'Spanish 2' : 'Spanish 1',
+        level: this.currentLevel === 'geometry' ? 'Geometry' : (this.currentLevel === 'spanish2' ? 'Spanish 2' : 'Spanish 1'),
         module: this.currentQuestion?.module || 'dashboard',
         source: 'feedback_button',
-        dashboard: this.currentLevel === 'spanish2' ? 'Spanish 2 Honors' : 'Spanish 1',
+        dashboard: this.currentLevel === 'geometry' ? 'Geometry' : (this.currentLevel === 'spanish2' ? 'Spanish 2 Honors' : 'Spanish 1'),
         page_url: window.location.href
       });
       this.setFeedbackStatus('Tally opened in a new tab. Submit your feedback there.', 'good');
@@ -4858,7 +4859,7 @@ mean/nice
       this.setFeedbackStatus('Sending feedback…', 'neutral');
       try {
         const formData = new FormData(this.$.feedbackForm);
-        formData.append('_subject', `Claro feedback · ${this.currentLevel || 'Spanish 1'}`);
+        formData.append('_subject', `Vertex feedback · ${this.currentLevel || 'Geometry'}`);
         formData.append('level', this.currentLevel || 'spanish1');
         formData.append('module', this.currentQuestion?.module || 'dashboard');
         formData.append('url', window.location.href);
