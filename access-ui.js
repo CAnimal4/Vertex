@@ -32,6 +32,8 @@
     ser_estar: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more Ser/Estar practice.' },
     gustar: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more Gustar practice.' },
     dates: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more date questions.' }
+    ,honors_test1_review: { kind: 'locked', label: 'Premium only: unlock the complete test review.' }
+    ,honors_ordinal_numbers: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds the complete ordinal-number pool.' }
   };
 
   function applyPremiumBadges() {
@@ -42,13 +44,18 @@
       const row = input.closest('.toggle') || input.closest('.mayo-madness-panel')?.querySelector('summary');
       const label = row?.querySelector('.label') || row?.querySelector('span');
       if (!row || !label || row.querySelector(`[data-premium-badge="${key}"]`)) return;
-      const badge = document.createElement('span');
+      const badge = document.createElement('button');
+      badge.type = 'button';
       badge.className = `premium-badge premium-badge-${entitlement.kind}`;
       badge.dataset.premiumBadge = key;
       badge.textContent = entitlement.kind === 'locked' ? '🔒' : '◐';
       badge.title = entitlement.label;
       badge.setAttribute('aria-label', entitlement.label);
-      badge.tabIndex = 0;
+      badge.dataset.premiumLock = entitlement.kind === 'locked' ? 'true' : 'false';
+      badge.addEventListener('click', (event) => {
+        event.preventDefault(); event.stopPropagation();
+        if (!isElevated()) openPremiumFromLock();
+      });
       label.append(' ', badge);
     });
   }
@@ -57,6 +64,33 @@
     const status = $('premiumFeedback');
     if (status) { status.className = `feedback ${tone}`; status.textContent = message; }
   }
+
+  function closeSettingsBeforePremium() {
+    const overlay = $('settingsOverlay');
+    if (overlay) { overlay.hidden = true; overlay.style.display = 'none'; }
+  }
+
+  function openPremiumFromLock() {
+    document.querySelector('.shared-prompt-premium')?.remove();
+    closeSettingsBeforePremium();
+    const app = window.SpanishPracticeApp || window.VertexApp;
+    const overlay = $('premiumOverlay');
+    if (overlay) {
+      // The shared bootstrap intentionally hides overlays with the HTML hidden
+      // attribute. App.openModal only changes display, so clear hidden here too.
+      overlay.hidden = false;
+      overlay.style.display = 'flex';
+      overlay.style.zIndex = '1400';
+    }
+    app?.openPremiumAccess?.();
+    if (overlay) {
+      overlay.hidden = false;
+      overlay.style.display = 'flex';
+      overlay.style.zIndex = '1400';
+      window.setTimeout(() => overlay.querySelector('input,button')?.focus?.(), 0);
+    }
+  }
+  window.openPremiumFromLock = openPremiumFromLock;
 
   function ensureTools() {
     const modal = $('premiumOverlay')?.querySelector('.modal');
@@ -144,7 +178,9 @@
       if (overlay) { overlay.hidden = id === 'moderationRequestOverlay'; overlay.style.display = 'none'; }
     });
     ensureTools();
+    window.addEventListener('premium:open', openPremiumFromLock);
     document.addEventListener('click', async (event) => {
+      if (event.target.closest('#premiumBtn,[data-premium-lock]')) closeSettingsBeforePremium();
       if (event.target.closest('#premiumSubmitBtn')) {
         event.preventDefault(); event.stopImmediatePropagation();
         const password = $('premiumPasswordInput')?.value || '';

@@ -7,13 +7,13 @@
     { key:'geometry-1-3', unit:'unit-1', section:'1.3', name:'Midpoint and Distance Formula', sources:['01-03_midpoint-and-distance-formula_annotated.pdf'], premium:false },
     { key:'geometry-1-5', unit:'unit-1', section:'1.5', name:'Measuring and Constructing Angles', sources:['01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf'], premium:false },
     { key:'geometry-1-6', unit:'unit-1', section:'1.6', name:'Pairs of Angles', sources:['01-06_pairs-of-angles_annotated.pdf'], premium:false },
-    { key:'geometry-review', unit:'unit-1', section:'1.99', name:'Test 1 Review', sources:['01-99_review-for-test-1_answers.pdf'], premium:false },
+    { key:'geometry-review', unit:'unit-1', section:'1.99', name:'Test 1 Review', sources:['01-99_review-for-test-1_answers.pdf'], premium:true },
     { key:'geometry-2-2', unit:'unit-2', section:'2.2', name:'Inductive and Deductive Reasoning', sources:['02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf'], premium:false },
     { key:'geometry-2-4', unit:'unit-2', section:'2.4', name:'Algebraic Reasoning', sources:['02-04_algebraic-reasoning_annotated.pdf'], premium:false },
     { key:'geometry-2-5', unit:'unit-2', section:'2.5', name:'Proving Statements about Segments and Angles', sources:['02-05_proving-segments-and-angles_annotated.pdf'], premium:false },
     { key:'geometry-2-6', unit:'unit-2', section:'2.6', name:'Proving Geometric Relationships', sources:['02-06_proving-geometric-relationships_annotated.pdf'], premium:false },
     { key:'geometry-3-1', unit:'unit-3', section:'3.1', name:'Pairs of Lines and Angles', sources:['03-01_pairs-of-lines-and-angles_blank.pdf'], premium:false },
-    { key:'geometry-3-2', unit:'unit-3', section:'3.2', name:'Parallel Lines and Transversals', sources:['03-02_parallel-lines-and-transversals_annotated.pdf'], premium:true },
+    { key:'geometry-3-2', unit:'unit-3', section:'3.2', name:'Parallel Lines and Transversals', sources:['03-02_parallel-lines-and-transversals_annotated.pdf'], premium:false, reduced:true },
     { key:'geometry-3-3', unit:'unit-3', section:'3.3', name:'Proofs with Parallel Lines', sources:['03-03_proofs-with-parallel-lines_annotated.pdf'], premium:true },
     { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:true },
     { key:'geometry-review-2', unit:'unit-3', section:'3.99', name:'Test 2 Review', sources:['03-99_review-for-test-2_answers.pdf'], premium:true },
@@ -87,10 +87,20 @@
     const unlocked = !!app.hasPremiumAccess?.(); const preferences = readPreferences(); const saved = app.state?.geometryModules || preferences.modules || {};
     const markup = ['unit-1','unit-2','unit-3','reference'].map((unit) => {
       const label = unit === 'reference' ? 'Theorems, Definitions, Postulates & Properties' : `Unit ${unit.slice(-1)}`;
-      const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; return `<div class="toggle${locked ? ' module-locked' : ''}"><div><div class="label">${module.section} ${module.name}${locked ? ' 🔒' : ''}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${QUESTIONS[module.key].length} questions${locked ? ' · Premium' : ''}</div></div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
+      const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; const entitlement = locked ? 'locked' : module.reduced ? 'reduced' : ''; const description = locked ? 'Premium only: unlock this geometry section.' : module.reduced ? 'Free includes a smaller rotation; Premium adds the complete section.' : ''; const badge = entitlement ? `<button type="button" class="premium-badge premium-badge-${entitlement}" data-premium-lock="true" title="${description}" aria-label="${description}">${entitlement === 'locked' ? '🔒' : '◐'}</button>` : ''; return `<div class="toggle${locked ? ' module-locked' : ''}"><div><div class="label">${module.section} ${module.name} ${badge}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${QUESTIONS[module.key].length} questions${locked ? ' · Premium' : ''}</div></div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
       return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
     }).join('');
     section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + markup;
+    section.querySelectorAll('[data-premium-lock]').forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault(); event.stopPropagation();
+      document.querySelector('.shared-prompt-premium')?.remove();
+      const settings = document.getElementById('settingsOverlay');
+      if (settings) { settings.hidden = true; settings.style.display = 'none'; }
+      const premium = document.getElementById('premiumOverlay');
+      if (premium) { premium.hidden = false; premium.style.display = 'flex'; premium.style.zIndex = '1400'; }
+      app.openPremiumAccess?.();
+      if (premium) { premium.hidden = false; premium.style.display = 'flex'; premium.style.zIndex = '1400'; }
+    }));
     section.querySelectorAll('[data-geometry-module]:not(:disabled)').forEach((box) => box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...section.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); writePreferences({ ...readPreferences(), modules: app.state.geometryModules }); app.saveSoon(); app.updateHomeSummary?.(); }));
     section.querySelectorAll('details.module-group').forEach((group) => group.addEventListener('toggle', () => { const summary = group.querySelector('summary').textContent; const groups = { ...readPreferences().groups, [summary.startsWith('Theorems, Definitions') ? 'reference' : `unit-${summary.slice(-1)}`]: group.open }; writePreferences({ ...readPreferences(), groups }); }));
   }

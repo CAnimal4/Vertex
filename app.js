@@ -4658,6 +4658,7 @@ mean/nice
     isModulePracticeEnabled(moduleKey) {
       if (moduleKey === MAYO_MADNESS_KEY) return this.getEnabledMayoMadnessModules().length > 0;
       if (!this.state.settings.modulesEnabled[moduleKey]) return false;
+      if (moduleKey === 'honors_test1_review' && !this.hasPremiumAccess()) return false;
       if (!isMayoMadnessKey(moduleKey)) return true;
       return !!(this.hasPremiumAccess() && this.state.settings.mayoMadnessEnabled);
     },
