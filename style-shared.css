@@ -192,8 +192,16 @@ body:has(.learning-app-shell){padding:0!important}
   .learning-app-shell .modal-overlay .modal-heading,.learning-app-shell .modal-overlay .modal-head{gap:10px!important;padding-bottom:11px!important}
   .learning-app-shell .modal-overlay .modal-heading h2,.learning-app-shell .modal-overlay .modal-head [id$="Title"]{font-size:1.2rem!important}
   .learning-app-shell .modal-overlay .modal-actions,.learning-app-shell .modal-overlay .feedback-form-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
-.learning-app-shell .modal-overlay .modal-actions button,.learning-app-shell .modal-overlay .feedback-form-actions button{width:100%!important}
+  .learning-app-shell .modal-overlay .modal-actions button,.learning-app-shell .modal-overlay .feedback-form-actions button{width:100%!important}
 }
 
-/* Keep every modal closed until its owning interaction opens it. */
-.modal-overlay[hidden]{display:none!important}
+/* Dismissible feedback and premium nudges shared by all learning apps. */
+.shared-prompt{position:fixed;right:20px;bottom:20px;z-index:100;display:flex;align-items:center;gap:18px;width:min(520px,calc(100vw - 32px));padding:16px 18px;border:1px solid color-mix(in srgb,var(--brand,#2563eb) 22%,#fff);border-radius:18px;background:color-mix(in srgb,#fff 88%,var(--brand-soft,#eef2ff));box-shadow:0 18px 50px rgba(15,23,42,.18);opacity:0;transform:translateY(12px);transition:opacity .2s ease,transform .2s ease}
+.shared-prompt.is-visible{opacity:1;transform:translateY(0)}
+.shared-prompt strong{display:block;font-size:.98rem;color:var(--ink,#0f172a)}
+.shared-prompt p{margin:3px 0 0;color:var(--muted,#475569);font-size:.86rem;line-height:1.35}
+.shared-prompt-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.shared-prompt button{min-height:38px;padding:8px 11px;border-radius:10px;font:800 .82rem/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}
+.shared-prompt-primary{border:1px solid var(--brand,#2563eb);background:var(--brand,#2563eb);color:#fff}
+.shared-prompt-dismiss{border:1px solid var(--line,#e2e8f0);background:#fff;color:var(--muted,#475569)}
+@media(max-width:640px){.shared-prompt{right:10px;bottom:10px;display:grid;gap:12px;padding:14px}.shared-prompt-actions{display:grid;grid-template-columns:1fr 1fr}.shared-prompt button{width:100%}}
