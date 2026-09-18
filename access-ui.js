@@ -12,6 +12,46 @@
   };
   const isElevated = () => session.permissions && session.permissions.premium === true;
   const roleLabel = () => ({ premium: 'Premium', mod: 'Moderator', admin: 'Admin' })[session.role] || 'Free';
+  const premiumEntitlements = {
+    mayo_madness: { kind: 'locked', label: 'Premium only: unlock the full Mayo Madness collection.' },
+    mayo_madness_1: { kind: 'locked', label: 'Premium only: unlock the Level 1 Mayo Madness vocabulary set.' },
+    mayo_madness_2: { kind: 'locked', label: 'Premium only: unlock the Level 2 Mayo Madness vocabulary set.' },
+    rapid_translations_2: { kind: 'locked', label: 'Premium only: unlock rapid-fire translation practice.' },
+    rapid_regular_verbs: { kind: 'locked', label: 'Premium only: unlock rapid regular-verb practice.' },
+    rapid_irregular_verbs: { kind: 'locked', label: 'Premium only: unlock rapid irregular-verb practice.' },
+    mayo_madness_3_rapid_translations: { kind: 'locked', label: 'Premium only: unlock Level 3 rapid-fire translations.' },
+    commands: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds the complete command pool.' },
+    vocab: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds the complete vocabulary pool.' },
+    reflexive: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more reflexive practice.' },
+    tenses: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more tense practice.' },
+    prices: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more price questions.' },
+    weather: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more weather questions.' },
+    clothing: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more clothing questions.' },
+    foods: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more food questions.' },
+    present_progressive: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more present-progressive practice.' },
+    ser_estar: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more Ser/Estar practice.' },
+    gustar: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more Gustar practice.' },
+    dates: { kind: 'reduced', label: 'Free includes a smaller rotation; Premium adds more date questions.' }
+  };
+
+  function applyPremiumBadges() {
+    document.querySelectorAll('#moduleSettingsSection input[id^="toggle_"]').forEach((input) => {
+      const key = input.id.slice('toggle_'.length);
+      const entitlement = premiumEntitlements[key];
+      if (!entitlement) return;
+      const row = input.closest('.toggle') || input.closest('.mayo-madness-panel')?.querySelector('summary');
+      const label = row?.querySelector('.label') || row?.querySelector('span');
+      if (!row || !label || row.querySelector(`[data-premium-badge="${key}"]`)) return;
+      const badge = document.createElement('span');
+      badge.className = `premium-badge premium-badge-${entitlement.kind}`;
+      badge.dataset.premiumBadge = key;
+      badge.textContent = entitlement.kind === 'locked' ? '🔒' : '◐';
+      badge.title = entitlement.label;
+      badge.setAttribute('aria-label', entitlement.label);
+      badge.tabIndex = 0;
+      label.append(' ', badge);
+    });
+  }
 
   function setStatus(message, tone = 'neutral') {
     const status = $('premiumFeedback');
@@ -76,6 +116,7 @@
   }
 
   function sync() {
+    applyPremiumBadges();
     const app = window.SpanishPracticeApp || window.VertexApp;
     if (app) {
       app.mayoPremiumUnlocked = isElevated();

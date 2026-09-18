@@ -13,13 +13,6 @@ const ROLE_PERMISSIONS = Object.freeze({
   mod: Object.freeze({ premium: true, viewModeration: true, requestDeletion: true, reviewDeletion: false, suppressContent: false }),
   admin: Object.freeze({ premium: true, viewModeration: true, requestDeletion: true, reviewDeletion: true, suppressContent: true })
 });
-const DEFAULT_ACCESS_CODES = Object.freeze({
-  PREMIUM_ACCESS_CODE_1: 'fiske',
-  PREMIUM_ACCESS_CODE_2: 'foundedcrane',
-  PREMIUM_ACCESS_CODE_3: 'patriotssuck',
-  MODERATOR_ACCESS_CODE: 'HT1InteloftheEon',
-  ADMIN_ACCESS_CODE: 'ibelikesheesh'
-});
 const ACCESS_APP_ID = process.env.ACCESS_APP_ID || 'vertex';
 const ACCESS_APP_KEY = ACCESS_APP_ID.replace(/[^a-z0-9]+/gi, '_').toUpperCase();
 
@@ -41,7 +34,7 @@ function accessCodeEntries() {
   ];
 }
 
-function configuredAccessCode(variable) { return normalizeAccessCode(DEFAULT_ACCESS_CODES[variable] || process.env[variable]); }
+function configuredAccessCode(variable) { return normalizeAccessCode(process.env[variable]); }
 
 function publicSession(session) {
   const role = ROLES.includes(session && session.role) ? session.role : 'free';

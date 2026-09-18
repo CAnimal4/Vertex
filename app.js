@@ -47,7 +47,7 @@
   const APP_VERSION = 2;
   const ANALYTICS_VERSION = 2;
   const APP_ID = 'vertex';
-  const ATLAS_PLANS_URL = 'https://atlaslearning.vercel.app/plans';
+  const ATLAS_PLANS_URL = 'https://atlaslearning.vercel.app/plans.html';
   // Paste the public Tally form URLs here after creating the two forms.
   // Example: https://tally.so/r/xxxxxx
   const TALLY_FEEDBACK_URL = 'https://tally.so/r/68grLO';
