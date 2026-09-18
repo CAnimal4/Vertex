@@ -37,13 +37,20 @@
   };
 
   function applyPremiumBadges() {
-    document.querySelectorAll('#moduleSettingsSection input[id^="toggle_"]').forEach((input) => {
+    const sectionCounts = new WeakMap();
+    document.querySelectorAll('#moduleSettingsSection input[id^="toggle_"], #summerPrepSettings input[id^="toggle_"]').forEach((input) => {
       const key = input.id.slice('toggle_'.length);
       const entitlement = premiumEntitlements[key];
       if (!entitlement) return;
       const row = input.closest('.toggle') || input.closest('.mayo-madness-panel')?.querySelector('summary');
       const label = row?.querySelector('.label') || row?.querySelector('span');
       if (!row || !label || row.querySelector(`[data-premium-badge="${key}"]`)) return;
+      const section = input.closest('.module-group, .mayo-madness-panel, .summer-prep-settings, .settings-accordion') || input.closest('.accordion-inner') || input.closest('#moduleSettingsSection');
+      const counts = sectionCounts.get(section) || { locked: 0, reduced: 0 };
+      const limit = entitlement.kind === 'locked' ? 1 : 2;
+      if (counts[entitlement.kind] >= limit) return;
+      counts[entitlement.kind] += 1;
+      sectionCounts.set(section, counts);
       const badge = document.createElement('button');
       badge.type = 'button';
       badge.className = `premium-badge premium-badge-${entitlement.kind}`;
