@@ -85,13 +85,15 @@
   function renderSettings(app) {
     const section = document.getElementById('moduleSettingsSection'); if (!section) return;
     const unlocked = !!app.hasPremiumAccess?.(); const preferences = readPreferences(); const saved = app.state?.geometryModules || preferences.modules || {};
-    const heading = '<div class="module-settings-heading"><strong>Geometry modules</strong><small>Free sections stay available. Premium sections unlock parallel-lines and reference practice.</small></div>';
+    const heading = '<div class="module-settings-heading"><small>Free sections stay available. Premium sections unlock parallel-lines and reference practice.</small></div>';
     const markup = ['unit-1','unit-2','unit-3','reference'].map((unit) => {
       const label = unit === 'reference' ? 'Reference' : `Unit ${unit.slice(-1)}`;
       const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; return `<div class="toggle${locked ? ' module-locked' : ''}"><div><div class="label">${module.section} ${module.name}${locked ? ' 🔒' : ''}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${QUESTIONS[module.key].length} questions${locked ? ' · Premium' : ''}</div></div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
       return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
     }).join('');
-    section.innerHTML = heading + markup;
+    section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + heading + markup;
+    section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + heading + markup;
+>>>>>>> 2856088 (Style Vertex settings and app switcher)
     section.querySelectorAll('[data-geometry-module]:not(:disabled)').forEach((box) => box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...section.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); writePreferences({ ...readPreferences(), modules: app.state.geometryModules }); app.saveSoon(); app.updateHomeSummary?.(); }));
     section.querySelectorAll('details.module-group').forEach((group) => group.addEventListener('toggle', () => { const groups = { ...readPreferences().groups, [group.querySelector('summary').textContent === 'Reference' ? 'reference' : `unit-${group.querySelector('summary').textContent.slice(-1)}`]: group.open }; writePreferences({ ...readPreferences(), groups }); }));
   }

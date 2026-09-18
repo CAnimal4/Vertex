@@ -126,6 +126,24 @@ body:has(.learning-app-shell){padding:0!important}
 @media(max-width:620px){.learning-app-shell .home-actions{display:grid}.learning-app-shell .home-start-btn,.learning-app-shell .home-settings-btn{width:100%}.learning-app-shell .level-switch{margin-top:12px}}
 /* Final polish pass: one restrained elevation and rhythm system across both apps. */
 .learning-app-shell .topbar{box-shadow:0 14px 36px rgba(15,23,42,.08)!important}
+.learning-app-shell .brand-switcher-button .brand-mark,
+.learning-app-shell .app-switcher-menu img{display:block;flex:0 0 auto;object-fit:contain;background:var(--brand-soft,#f8fafc);border:0}
+.learning-app-shell .brand-switcher-button .brand-mark{width:42px!important;height:42px!important;border-radius:12px!important}
+.learning-app-shell .app-switcher-menu img{width:32px!important;height:32px!important;border-radius:9px!important}
+.learning-app-shell .brand-switcher-button .brand-mark[src*="claro-mark"]{transform:scale(1)}
+.learning-app-shell .brand-switcher-button .brand-mark[src*="vertex-mark"],
+.learning-app-shell .app-switcher-menu img[src*="vertex-mark"]{transform:scale(1.06)}
+.learning-app-shell .brand-switcher-button .brand-mark[src*="meridian-mark"],
+.learning-app-shell .app-switcher-menu img[src*="meridian-mark"]{transform:scale(1.2)}
+.learning-app-shell .brand-switcher-button .brand-mark[src*="atlas-mark"],
+.learning-app-shell .app-switcher-menu img[src*="atlas-mark"]{transform:scale(1.38)}
+.learning-app-shell .app-switcher-menu a{min-height:48px}
+.learning-app-shell .settings-accordion>summary{list-style:none;cursor:pointer}
+.learning-app-shell .settings-accordion>summary::-webkit-details-marker,
+.learning-app-shell .module-group>summary::-webkit-details-marker{display:none}
+.learning-app-shell .settings-accordion>summary:focus-visible,
+.learning-app-shell .module-group>summary:focus-visible{outline:3px solid color-mix(in srgb,var(--focus,#818cf8) 35%,transparent);outline-offset:2px}
+.learning-app-shell button:not([class]){-webkit-appearance:none;appearance:none;border:1px solid var(--border,#e2e8f0);border-radius:12px;background:var(--surface,#fff);color:var(--text,#0f172a);font:inherit}
 .learning-app-shell .dashboard-card,.learning-app-shell .home-card{box-shadow:0 18px 48px rgba(15,23,42,.08)!important;overflow:hidden}
 .learning-app-shell .home-actions{display:flex;align-items:center;gap:12px!important;padding-bottom:0!important;border-bottom:0!important}
 .learning-app-shell .dashboard-analytics{margin-top:26px!important;padding-top:0!important;border-top:0!important}
