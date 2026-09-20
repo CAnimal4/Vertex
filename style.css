@@ -770,11 +770,13 @@
     .summer-prep-settings > summary{color:var(--primary-2)}
     .settings-section-intro{margin:0 0 10px; color:var(--muted); font-size:.86rem; line-height:1.4}
     .summer-summary{display:block; margin-top:12px; color:var(--primary-2); font-weight:850}
-    .welcome-steps{display:grid; gap:10px; margin:16px 0 20px}
-    .welcome-step{display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid #e5e7eb; border-radius:14px; background:#fafbff}
-    .welcome-step > span{display:grid; place-items:center; flex:0 0 27px; height:27px; border-radius:9px; background:#eef2ff; color:var(--primary); font-weight:950}
-    .welcome-step strong{display:block; margin-bottom:2px}
-    .welcome-step small{display:block; color:var(--muted); line-height:1.4}
+    .welcome-steps{display:grid; gap:10px; margin:18px 0 20px}
+    .welcome-step{display:flex; gap:12px; align-items:flex-start; padding:13px 14px; border:1px solid color-mix(in srgb,var(--primary) 18%,#e5e7eb); border-radius:16px; background:linear-gradient(135deg,var(--surface-2,#fafbff),#fff); box-shadow:0 5px 14px rgba(15,23,42,.04)}
+    .welcome-step > span{display:grid; place-items:center; flex:0 0 29px; height:29px; border-radius:10px; background:var(--brand-soft,#eef2ff); color:var(--primary-2,var(--primary)); font-weight:950}
+    .welcome-step strong{display:block; margin:1px 0 4px; color:var(--text,#172033); line-height:1.25}
+    .welcome-step small{display:block; color:var(--muted); line-height:1.5}
+    .welcome-step b{color:var(--primary-2,var(--primary)); font-weight:850}
+    #firstRunOverlay .row{justify-content:space-between; align-items:center; gap:10px}
     .help-details{margin:0 0 18px; border:1px solid #e5e7eb; border-radius:14px; background:#fafbff; overflow:hidden}
     .help-details > summary{display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; list-style:none; padding:11px 13px; color:#334155; font-size:.88rem; font-weight:900}
     .help-details > summary::-webkit-details-marker{display:none}

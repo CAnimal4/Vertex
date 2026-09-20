@@ -50,9 +50,15 @@
       if (typeof app?.openPremiumAccess === 'function') app.openPremiumAccess();
       else window.setTimeout(() => document.getElementById('premiumBtn')?.click(), 0);
     };
-    window.setTimeout(() => {
+    const showFeedbackPrompt = () => {
+      const firstRun = document.getElementById('firstRunOverlay');
+      if (firstRun && firstRun.style.display === 'flex') {
+        window.setTimeout(showFeedbackPrompt, 800);
+        return;
+      }
       if (!hasCookie(cookieName)) show('feedback', `Welcome to ${appName}`, 'If you spot a glitch or have an idea, a quick note helps us improve the learning experience.', 'Leave feedback', openFeedback);
-    }, 1400);
+    };
+    window.setTimeout(showFeedbackPrompt, 1400);
     document.addEventListener('click', (event) => {
       const locked = event.target.closest('.module-locked,[data-premium="true"],[data-premium-locked]');
       if (!locked || document.querySelector('.shared-prompt-premium')) return;
