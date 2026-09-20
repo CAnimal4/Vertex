@@ -6,6 +6,22 @@
 
   const appId = document.body.dataset.appId || 'learning-app';
   const publicFiles = JSON.parse(root.dataset.publicFiles || '[]');
+  if (appId === 'vertex') {
+    const vertexPdfNames = [
+      '00_geometry-sequence_highlighted.pdf', '01-01_points-lines-planes_annotated.pdf', '01-03_midpoint-and-distance-formula_annotated.pdf',
+      '01-05_measuring-angles_annotated.pdf', '01-05_more-measuring-angles_annotated.pdf', '01-06_pairs-of-angles_annotated.pdf',
+      '01-99_review-for-test-1_answers.pdf', '02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf', '02-04_algebraic-reasoning_annotated.pdf',
+      '02-05_proving-segments-and-angles_annotated.pdf', '02-06_proving-geometric-relationships_annotated.pdf', '03-01_pairs-of-lines-and-angles_blank.pdf',
+      '03-02_parallel-lines-and-transversals_annotated.pdf', '03-03_proofs-with-parallel-lines_annotated.pdf', '03-04_proofs-with-perpendicular-lines_annotated.pdf',
+      '03-99_review-for-test-2_answers.pdf'
+    ];
+    publicFiles.splice(0, publicFiles.length, ...vertexPdfNames.map((name) => ({
+      name: name.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' '),
+      description: 'Public Geometry PDF resource.',
+      url: `assets/canvas-geometry-pdfs/${name}`,
+      type: 'pdf'
+    })));
+  }
   const tallyUrl = root.dataset.tallyUrl && !root.dataset.tallyUrl.includes('REPLACE') ? root.dataset.tallyUrl : 'https://tally.so/r/GxMyoj';
   const cookieKey = `learning_library_${appId}_v1`;
   const dbName = `learning_library_${appId}_v1`;
