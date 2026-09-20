@@ -62,7 +62,7 @@ Developer note:
     :root{--primary:#166534;--primary-2:#14532d;--brand:#166534;--brand-strong:#14532d;--brand-soft:#f1faf3;--keyhint-bg:#f1faf3;--keyhint-border:#bbf7d0;--focus:#86efac} body{background:radial-gradient(1200px 600px at 20% 0%,#ecfdf5 0%,transparent 60%),radial-gradient(1200px 600px at 80% 20%,#f0fdf4 0%,transparent 55%),#f5faf6} .app-switcher-menu>a:hover,.app-switcher-menu>a.is-current,.dashboard-switcher-option:hover,.dashboard-switcher-option.is-current{background:#f1faf3!important}.dashboard-switcher-button{background:#f1faf3!important;color:#14532d!important}.dashboard-dot{background:#166534!important}.feedback-fab{border-color:#bbf7d0!important;color:#14532d!important}
   </style>
 </head>
-<body>
+<body data-app-id="vertex">
   <div class="app learning-app-shell" id="appRoot">
     <header class="topbar">
       <div class="brand">
@@ -120,6 +120,11 @@ Developer note:
         <button class="btn primary home-start-btn" id="enterPracticeBtn">Enter practice session <span aria-hidden="true">→</span></button>
         <button class="btn home-settings-btn" id="homeSettingsBtn">Choose modules &amp; settings</button>
       </div>
+      <section class="library-launch-card" aria-labelledby="libraryLaunchTitle">
+        <div class="library-launch-mark" aria-hidden="true">▦</div>
+        <div><span class="home-overview-label">Shared resources</span><h2 id="libraryLaunchTitle">Library</h2><p>Keep class files close: browse public resources or upload files that stay private to this browser.</p></div>
+        <button class="btn primary" id="openLibraryBtn" type="button">Open Library <span aria-hidden="true">→</span></button>
+      </section>
       <section class="dashboard-analytics" id="dashboardAnalytics" aria-labelledby="analyticsTitle">
         <div class="dashboard-section-heading">
           <div><span class="home-overview-label">Your progress</span><h2 id="analyticsTitle">A clear picture of your practice</h2></div>
@@ -192,6 +197,15 @@ Developer note:
         <p class="feedback neutral" id="adminExportStatus" aria-live="polite"></p>
       </section>
     </main>
+
+    <div class="modal-overlay library-overlay" id="libraryOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="libraryTitle" data-tally-url="https://tally.so/r/REPLACE_WITH_LIBRARY_FORM_ID" data-public-files='[{"name":"Geometry sequence","description":"A highlighted overview of the geometry sequence.","url":"assets/canvas-geometry-pdfs/00_geometry-sequence_highlighted.pdf","type":"pdf"},{"name":"Points, lines & planes","description":"Annotated notes for the first geometry lesson.","url":"assets/canvas-geometry-pdfs/01-01_points-lines-planes_annotated.pdf","type":"pdf"},{"name":"Midpoint & distance formula","description":"Annotated reference and worked examples.","url":"assets/canvas-geometry-pdfs/01-03_midpoint-and-distance-formula_annotated.pdf","type":"pdf"},{"name":"Measuring angles","description":"Annotated angle-measurement notes.","url":"assets/canvas-geometry-pdfs/01-05_measuring-angles_annotated.pdf","type":"pdf"},{"name":"Pairs of angles","description":"Annotated relationships between angle pairs.","url":"assets/canvas-geometry-pdfs/01-06_pairs-of-angles_annotated.pdf","type":"pdf"},{"name":"Parallel lines & transversals","description":"Annotated notes and examples.","url":"assets/canvas-geometry-pdfs/03-02_parallel-lines-and-transversals_annotated.pdf","type":"pdf"},{"name":"Proofs with parallel lines","description":"Annotated proof reference.","url":"assets/canvas-geometry-pdfs/03-03_proofs-with-parallel-lines_annotated.pdf","type":"pdf"}]'>
+      <section class="modal library-modal">
+        <div class="modal-head"><div><span class="home-overview-label">Vertex resources</span><h2 id="libraryTitle">Library</h2><p>Public class resources for everyone, plus a private shelf for files you upload.</p></div><button class="icon-btn" id="libraryCloseBtn" type="button" aria-label="Close Library">✕</button></div>
+        <p class="library-count" id="libraryCount"></p>
+        <section class="library-section"><div class="library-section-heading"><div><span class="home-overview-label">Everyone can open these</span><h3>Public Library</h3></div></div><div class="library-file-list" id="libraryPublicList"></div></section>
+        <section class="library-section library-your-section"><div class="library-section-heading"><div><span class="home-overview-label">Private to this browser</span><h3>Your Library</h3><p>Uploaded files stay on this device until you choose to request public sharing.</p></div><button class="btn primary" id="libraryUploadBtn" type="button">Upload files</button><input id="libraryFileInput" type="file" multiple hidden /></div><div class="library-file-list" id="libraryYourList"></div></section>
+      </section>
+    </div>
 
     <main class="practice-card card" id="mainCard">
       <div class="top-row" style="display:none" aria-hidden="true">
@@ -829,6 +843,7 @@ Developer note:
   </div>
 
 <script src="app-shared.js"></script>
+<script src="library.js"></script>
 <!-- moderationPanel moderationHistory moderationRequestOverlay are rendered by access-ui.js -->
 <script src="app.js?v=20260918-access-fix-1"></script>
   <script src="access-ui.js?v=20260918-access-fix-2"></script>
