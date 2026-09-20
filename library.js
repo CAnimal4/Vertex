@@ -7,18 +7,28 @@
   const appId = document.body.dataset.appId || 'learning-app';
   const publicFiles = JSON.parse(root.dataset.publicFiles || '[]');
   if (appId === 'vertex') {
-    const vertexPdfNames = [
-      '00_geometry-sequence_highlighted.pdf', '01-01_points-lines-planes_annotated.pdf', '01-03_midpoint-and-distance-formula_annotated.pdf',
-      '01-05_measuring-angles_annotated.pdf', '01-05_more-measuring-angles_annotated.pdf', '01-06_pairs-of-angles_annotated.pdf',
-      '01-99_review-for-test-1_answers.pdf', '02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf', '02-04_algebraic-reasoning_annotated.pdf',
-      '02-05_proving-segments-and-angles_annotated.pdf', '02-06_proving-geometric-relationships_annotated.pdf', '03-01_pairs-of-lines-and-angles_blank.pdf',
-      '03-02_parallel-lines-and-transversals_annotated.pdf', '03-03_proofs-with-parallel-lines_annotated.pdf', '03-04_proofs-with-perpendicular-lines_annotated.pdf',
-      '03-99_review-for-test-2_answers.pdf'
+    const vertexPdfFiles = [
+      ['00_geometry-sequence_highlighted.pdf', 'Course map — Geometry sequence'],
+      ['01-01_points-lines-planes_annotated.pdf', 'Unit 1 — Points, lines & planes'],
+      ['01-03_midpoint-and-distance-formula_annotated.pdf', 'Unit 1 — Midpoint & distance'],
+      ['01-05_measuring-angles_annotated.pdf', 'Unit 1 — Measuring angles'],
+      ['01-05_more-measuring-angles_annotated.pdf', 'Unit 1 — Measuring angles: extra practice'],
+      ['01-06_pairs-of-angles_annotated.pdf', 'Unit 1 — Pairs of angles'],
+      ['01-99_review-for-test-1_answers.pdf', 'Unit 1 — Test 1 review'],
+      ['02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf', 'Unit 2 — Inductive & deductive reasoning'],
+      ['02-04_algebraic-reasoning_annotated.pdf', 'Unit 2 — Algebraic reasoning'],
+      ['02-05_proving-segments-and-angles_annotated.pdf', 'Unit 2 — Segment & angle proofs'],
+      ['02-06_proving-geometric-relationships_annotated.pdf', 'Unit 2 — Geometric relationships'],
+      ['03-01_pairs-of-lines-and-angles_blank.pdf', 'Unit 3 — Lines & angles: blank practice'],
+      ['03-02_parallel-lines-and-transversals_annotated.pdf', 'Unit 3 — Parallel lines & transversals'],
+      ['03-03_proofs-with-parallel-lines_annotated.pdf', 'Unit 3 — Parallel line proofs'],
+      ['03-04_proofs-with-perpendicular-lines_annotated.pdf', 'Unit 3 — Perpendicular line proofs'],
+      ['03-99_review-for-test-2_answers.pdf', 'Unit 3 — Test 2 review']
     ];
-    publicFiles.splice(0, publicFiles.length, ...vertexPdfNames.map((name) => ({
-      name: name.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' '),
+    publicFiles.splice(0, publicFiles.length, ...vertexPdfFiles.map(([file, name]) => ({
+      name,
       description: 'Public Geometry PDF resource.',
-      url: `assets/canvas-geometry-pdfs/${name}`,
+      url: `assets/canvas-geometry-pdfs/${file}`,
       type: 'pdf'
     })));
   }
