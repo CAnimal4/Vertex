@@ -140,6 +140,8 @@ body:has(.learning-app-shell){padding:0!important}
 .learning-app-shell .app-switcher-menu img[src*="meridian-mark"],
 .learning-app-shell .app-switcher-menu img[src*="atlas-mark"]{transform:none}
 .learning-app-shell .app-switcher-menu a{min-height:48px}
+/* The app picker is a neutral collection control; the current row should not
+   inherit the active app's theme color. */
 .learning-app-shell .settings-accordion>summary{list-style:none;cursor:pointer}
 .learning-app-shell .settings-accordion>summary::-webkit-details-marker,
 .learning-app-shell .module-group>summary::-webkit-details-marker{display:none}
