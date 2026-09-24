@@ -31,6 +31,10 @@
       url: `assets/canvas-geometry-pdfs/${file}`,
       type: 'pdf'
     })));
+    publicFiles.push(
+      { name: 'Unit 3 — Equations of parallel and perpendicular lines', description: 'Current Canvas Lesson 3-5 notes (Canvas sign-in may be required).', url: 'https://lbusd.instructure.com/courses/10299/files/2535173/download?wrap=1', type: 'pdf' },
+      { name: 'Unit 3 — Lesson 3-5 annotated notes', description: 'Teacher-annotated Canvas notes for Lesson 3-5 (Canvas sign-in may be required).', url: 'https://lbusd.instructure.com/courses/10299/files/2534749/download?wrap=1', type: 'pdf' }
+    );
   }
   const tallyUrl = root.dataset.tallyUrl && !root.dataset.tallyUrl.includes('REPLACE') ? root.dataset.tallyUrl : 'https://tally.so/r/GxMyoj';
   const cookieKey = `learning_library_${appId}_v1`;
