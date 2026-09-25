@@ -1930,6 +1930,9 @@ mean/nice
   }
 
   function normalizeLoose(str) {
+    if (window.VertexMathAnswer && window.SpanishPracticeApp?.currentLevel === 'geometry') {
+      return window.VertexMathAnswer.normalize(str);
+    }
     // accent-insensitive, case-insensitive, trims, collapses whitespace
     const cleaned = cleanText(str).toLowerCase();
     const noDia = stripDiacritics(cleaned);
@@ -5695,7 +5698,7 @@ mean/nice
       const q = this.currentQuestion;
       if (!q) return true;
       if (q.module === 'numbers') return !this.state.settings.numbersRequireTyping || !!this.answered;
-      if (q.mode === 'mcq') return true;
+      if (q.mode === 'mcq') return !!this.answered;
       if (q.mode === 'text') return !!this.answered;
       return true;
     },
@@ -5817,9 +5820,11 @@ mean/nice
         this.$.numberSpanish.textContent = expected;
         this.setNumberFeedback(`Correct: <strong>${escapeHtml(expected)}</strong>${accentNote ? `<br><small>${accentNote}</small>` : ''}`, 'good');
       } else {
-        this.answered = false;
-        this.setNumberFeedback(`Not quite. Try spelling <strong>${q.number}</strong> in Spanish before continuing.`, 'bad');
+        this.answered = true;
+        this.$.numberSpanish.textContent = expected;
+        this.setNumberFeedback(`Incorrect. Correct answer: <strong>${escapeHtml(expected)}</strong>`, 'bad');
       }
+      if (this.answered) this.$.nextNumbersBtn.disabled = false;
       this.saveSoon();
     },
 
@@ -6074,6 +6079,7 @@ mean/nice
 
       // Never-show button always visible
       this.$.neverBtn.disabled = !q || !q.id;
+      this.$.nextQBtn.disabled = !this.answered;
 
       if (q.module === 'numbers') {
         this.$.numbersSection.style.display = '';
@@ -6084,6 +6090,7 @@ mean/nice
         this.$.numberSpanish.textContent = '';
         this.$.practiceIndicator.textContent = this.numbersStatus || '';
         const typingOn = !!this.state.settings.numbersRequireTyping;
+        this.$.nextNumbersBtn.disabled = typingOn && !this.answered;
         this.$.numberTypingBlock.style.display = typingOn ? '' : 'none';
         this.$.submitNumberBtn.style.display = typingOn ? '' : 'none';
         this.$.revealBtn.textContent = typingOn ? 'Show answer' : 'Reveal in Spanish';
@@ -6122,7 +6129,7 @@ mean/nice
       this.$.mcqBlock.style.display = 'none';
       this.$.textBlock.style.display = 'none';
 
-      if (!keepFeedback) this.setFeedback('Type your answer, then press Enter or click Submit.', 'neutral');
+      if (!keepFeedback) this.setFeedback(q.mode === 'mcq' ? 'Choose an option, then Submit to see your feedback.' : 'Type your answer, then press Enter or click Submit.', 'neutral');
 
       if (q.mode === 'mcq') {
         this.$.mcqBlock.style.display = '';
@@ -6296,7 +6303,7 @@ mean/nice
           const targetNote = targetMissed ? '<br><small>This was valid. This exercise was practicing a different answer.</small>' : '';
           this.setFeedback(`✅ Correct: <strong>${escapeHtml(user.trim())}</strong>${targetNote}${accentNote ? `<br><small>${accentNote}</small>` : ''}<br><small>${q.explanation || ''}</small>`, 'good');
         } else {
-          this.setFeedback(`❌ Not quite. Correct answer: <strong>${escapeHtml(q.expectedDisplay)}</strong><br><small>${q.explanation || ''}</small><br><small>You must type the correct answer before continuing.</small>`, 'bad');
+          this.setFeedback(`❌ Incorrect. Correct answer: <strong>${escapeHtml(q.expectedDisplay)}</strong><br><small>${q.explanation || ''}</small><br><small>Review the correction, then press Next when ready.</small>`, 'bad');
         }
       }
 
@@ -6305,7 +6312,9 @@ mean/nice
       this.adjustItemScore(q.id, correct);
       this.recordSessionAnswer(correct);
 
-      this.answered = (q.mode === 'mcq') ? true : !!correct;
+      this.answered = true;
+      if (q.module === 'numbers') this.$.nextNumbersBtn.disabled = false;
+      else this.$.nextQBtn.disabled = false;
       this.saveSoon();
     },
 
@@ -6862,7 +6871,7 @@ mean/nice
       const serEstarSample = modules.ser_estar.generateQuestion(this);
       const serEstarConjugated = !!serEstarSample && serEstarSample.expectedDisplay && !['ser','estar'].includes(normalizeLoose(serEstarSample.expectedDisplay));
       results.push({ ok: serEstarConjugated, label: 'Ser/Estar expects conjugated form (not infinitive)' });
-      results.push({ ok: typeof this.canAdvanceFromCurrentQuestion === 'function', label: 'Strict text retry guard helper exists' });
+      results.push({ ok: typeof this.canAdvanceFromCurrentQuestion === 'function', label: 'Answered text questions can continue after correction feedback' });
       const priorQuestion = this.currentQuestion;
       const priorAnswered = this.answered;
       const priorNumbersRequireTyping = this.state.settings.numbersRequireTyping;
@@ -6871,7 +6880,10 @@ mean/nice
       const blockTextAdvance = this.canAdvanceFromCurrentQuestion() === false;
       this.currentQuestion = { module: 'commands', mode: 'mcq', id: 'smoke-mcq' };
       this.answered = false;
-      const allowMcqAdvance = this.canAdvanceFromCurrentQuestion() === true;
+      const blockMcqAdvance = this.canAdvanceFromCurrentQuestion() === false;
+      this.answered = true;
+      const allowAnsweredMcqAdvance = this.canAdvanceFromCurrentQuestion() === true;
+      this.answered = false;
       this.state.settings.numbersRequireTyping = false;
       this.currentQuestion = { module: 'numbers', mode: 'numbers', id: 'smoke-num' };
       this.answered = false;
@@ -6879,7 +6891,7 @@ mean/nice
       this.state.settings.numbersRequireTyping = priorNumbersRequireTyping;
       this.currentQuestion = priorQuestion;
       this.answered = priorAnswered;
-      results.push({ ok: blockTextAdvance && allowMcqAdvance && allowNumbersAdvance, label: 'Strict retry applies to text only (MCQ/Numbers unaffected)' });
+      results.push({ ok: blockTextAdvance && blockMcqAdvance && allowAnsweredMcqAdvance && allowNumbersAdvance, label: 'Text and multiple-choice questions require feedback before Next, then allow review' });
 
       const pass = results.filter((r) => r.ok).length;
       const lines = results.map((r) => `${r.ok ? 'PASS' : 'FAIL'}: ${r.label}`);
