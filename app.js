@@ -134,17 +134,11 @@
     const bar = document.createElement('div'); bar.className = 'module-share-tools';
     bar.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
     section.append(bar);
-    const keys = new Set(MODULES.map((m) => m.key));
-    const params = new URLSearchParams(location.search), encoded = params.get('modules');
-    if (encoded !== null) {
-      const chosen = new Set(encoded.split(',').filter((key) => keys.has(key)));
-      for (const module of MODULES) app.state.settings.modulesEnabled[module.key] = chosen.has(module.key);
-      app.saveSoon(); app.refreshSettingsUI();
-    }
     document.getElementById('shareModulesBtn').addEventListener('click', async () => {
-      const selected = MODULES.filter((m) => app.state.settings.modulesEnabled[m.key]).map((m) => m.key);
+      const selected = [...section.querySelectorAll('[data-geometry-module]:checked')].map((input) => input.dataset.geometryModule);
       const query = new URLSearchParams(location.search); query.set('modules', selected.join(','));
       const url = `${location.origin}${location.pathname}?${query}${location.hash}`;
+      history.replaceState(null, '', url);
       try { await navigator.clipboard.writeText(url); document.getElementById('moduleShareStatus').textContent = 'Link copied.'; }
       catch (_) { window.prompt('Copy this module link:', url); }
     });
@@ -3752,12 +3746,6 @@ mean/nice
       }
 
       this.buildPools();
-      const sharedModuleParam = new URLSearchParams(window.location.search).get('modules');
-      if (sharedModuleParam !== null) {
-        const selected = new Set(sharedModuleParam.split(',').filter((key) => MODULES.some((module) => module.key === key)));
-        for (const module of MODULES) this.state.settings.modulesEnabled[module.key] = selected.has(module.key);
-        this.saveSoon();
-      }
       this.refreshSettingsUI();
       this.renderKeyHintStrip();
 

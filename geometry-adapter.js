@@ -97,7 +97,7 @@
     const mode = readPreferences().theoremMode === 'hard' ? 'text' : 'mcq';
     const facts = base.filter((item) => /Postulate|Theorem|Property|Definition/i.test(item.expectedDisplay || '') && !/parallel lines|perpendicular lines|reasons column/i.test(item.expectedDisplay || ''));
     return [...base, ...facts.map((item) => theoremQuestion({ ...item, id:`theorem-${item.id}`, mode,
-      prompt:mode === 'mcq' ? `Which theorem, postulate, definition, or property says: ${item.prompt.replace(/\?$/,'')}?` : `Type the exact name of the theorem, postulate, definition, or property: ${item.prompt.replace(/\?$/,'')}`
+      prompt:`${mode === 'mcq' ? 'Choose' : 'Type the exact name of'} the theorem, postulate, definition, or property that fits: ${item.prompt.replace(/\?$/,'')}${mode === 'mcq' ? '?' : '.'}`
     }, facts, mode))];
   };
   const enabledKeys = (app) => MODULES.filter((module) => !module.premium || app.hasPremiumAccess?.()).map((module) => module.key);
