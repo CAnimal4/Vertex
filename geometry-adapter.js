@@ -70,7 +70,36 @@
     'geometry-reference': [mcq('ref-point-mcq','An exact location with no size or dimension is a?','point',['point','line','plane','ray']), mcq('ref-line-mcq','A set of points extending forever in two directions is a?','line',['point','line','segment','plane']), makeQuestion('ref-plane','A flat surface with no thickness extending in two dimensions is a?','plane'), makeQuestion('ref-conjecture','An unproven statement based on observations is a?','conjecture',['an unproven statement']), makeQuestion('ref-counterexample','An example that disproves a conjecture is a?','counterexample'), makeQuestion('ref-segment-addition','AB + BC = AC when B is between A and C is the?','Segment Addition Postulate'), makeQuestion('ref-angle-addition','m∠ABD + m∠DBC = m∠ABC is the?','Angle Addition Postulate'), makeQuestion('ref-vertical','Vertical angles are congruent by the?','Vertical Angle Theorem'), makeQuestion('ref-linear-pair','A linear pair is supplementary by the?','Linear Pair Postulate'), makeQuestion('ref-congruent-supplements','Angles supplementary to the same angle are congruent by the?','Congruent Supplements Theorem'), makeQuestion('ref-congruent-complements','Angles complementary to the same angle are congruent by the?','Congruent Complements Theorem'), makeQuestion('ref-definition-congruent','Congruent segments have equal lengths by the?','Definition of Congruent Segments'), makeQuestion('ref-reflexive','A quantity equal to itself uses the?','Reflexive Property of Equality'), makeQuestion('ref-symmetric','If a=b then b=a uses the?','Symmetric Property of Equality'), makeQuestion('ref-transitive','If a=b and b=c then a=c uses the?','Transitive Property of Equality'), makeQuestion('ref-distributive','a(b+c)=ab+ac is the?','Distributive Property'), makeQuestion('ref-parallel','Lines that never intersect in a plane are?','parallel lines',['parallel']), makeQuestion('ref-perpendicular','Lines that form right angles are?','perpendicular lines',['perpendicular']), makeQuestion('ref-transversal','A line intersecting two or more coplanar lines is a?','transversal',['a transversal']), makeQuestion('ref-corresponding','For parallel lines cut by a transversal, corresponding angles are?','congruent',['equal']), makeQuestion('ref-same-side','For parallel lines cut by a transversal, same-side interior angles are?','supplementary',['supplementary angles']), makeQuestion('ref-converse','The converse of a parallel-lines angle theorem is used to prove the lines are?','parallel',['parallel lines'])]
   };
 
-  const poolFor = (app, key) => (QUESTIONS[key] || []).filter((item) => !app.state?.hiddenItems?.[item.id]);
+  const THEOREM_ALIASES = {
+    'segment addition postulate':['segment addition','segment addition post.','sap'], 'angle addition postulate':['angle addition','angle addition post.','aap'],
+    'vertical angle theorem':['vertical angles theorem','vertical angle thm.','vat'], 'linear pair postulate':['linear pair','linear pair post.','lpp'],
+    'congruent supplements theorem':['congruent supplements','congruent supplements thm.','cst'], 'congruent complements theorem':['congruent complements','congruent complements thm.','cct'],
+    'definition of congruent segments':['congruent segments definition','def. of congruent segments','dcs'], 'reflexive property of equality':['reflexive property','reflexive property of eq.','rpe'],
+    'symmetric property of equality':['symmetric property','symmetric property of eq.','spe'], 'transitive property of equality':['transitive property','transitive property of eq.','tpe'],
+    'distributive property':['distributive property of equality','distributive prop.','dp'], 'alternate interior angles theorem':['alternate interior angles','alternate interior angle theorem','aiat'],
+    'corresponding angles theorem':['corresponding angles','corresponding angles thm.','cat'], 'transitive property of parallel lines theorem':['transitive property of parallel lines','transitive parallel lines theorem','tpplt'],
+    'corresponding angles converse theorem':['corresponding angles converse','corresponding angles converse thm.','cac']
+  };
+  const canonicalName = (value) => normalizeAnswer(value).replace(/\./g,'').replace(/\b(def|thm|post)\b/g,(token) => ({def:'definition',thm:'theorem',post:'postulate'})[token]).replace(/\s+/g,' ').trim();
+  const theoremQuestion = (source, allFacts, mode) => {
+    const answer = String(source.expectedDisplay || '').trim(), canonical = canonicalName(answer);
+    const distractors = [...new Set(allFacts.map((item) => String(item.expectedDisplay || '').trim()).filter((name) => name && canonicalName(name) !== canonical))].sort((a,b) => Math.abs(a.length-answer.length)-Math.abs(b.length-answer.length)).slice(0,3);
+    const fallback = ['Angle Addition Postulate','Linear Pair Postulate','Vertical Angle Theorem','Reflexive Property of Equality'];
+    while (distractors.length < 3) { const next = fallback.find((name) => canonicalName(name) !== canonical && !distractors.some((item) => canonicalName(item) === canonicalName(name))); if (!next) break; distractors.push(next); }
+    const options = [answer, ...distractors].sort((a,b) => (a.length % 7) - (b.length % 7) || a.localeCompare(b));
+    return { ...source, mode, options:mode === 'mcq' ? options : undefined, correctIndex:mode === 'mcq' ? options.indexOf(answer) : undefined,
+      acceptable:new Set([answer, ...(THEOREM_ALIASES[canonical] || [])].map(canonicalName)), theoremDrill:true,
+      explanation:`${answer} — identify the rule by its exact condition, not a nearby theorem.` };
+  };
+  const poolFor = (app, key) => {
+    const base = (QUESTIONS[key] || []).filter((item) => !app.state?.hiddenItems?.[item.id]);
+    if (key !== 'geometry-reference') return base;
+    const mode = readPreferences().theoremMode === 'hard' ? 'text' : 'mcq';
+    const facts = base.filter((item) => /Postulate|Theorem|Property|Definition/i.test(item.expectedDisplay || '') && !/parallel lines|perpendicular lines|reasons column/i.test(item.expectedDisplay || ''));
+    return [...base, ...facts.map((item) => theoremQuestion({ ...item, id:`theorem-${item.id}`, mode,
+      prompt:mode === 'mcq' ? `Which theorem, postulate, definition, or property says: ${item.prompt.replace(/\?$/,'')}?` : `Type the exact name of the theorem, postulate, definition, or property: ${item.prompt.replace(/\?$/,'')}`
+    }, facts, mode))];
+  };
   const enabledKeys = (app) => MODULES.filter((module) => !module.premium || app.hasPremiumAccess?.()).map((module) => module.key);
   const PREF_COOKIE = 'vertex_geometry_preferences_v1';
   const readPreferences = () => {
@@ -99,6 +128,20 @@
       return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
     }).join('');
     section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + markup;
+    const modeTools = document.createElement('div');
+    modeTools.className = 'theorem-mode-tools';
+    modeTools.innerHTML = `<p class="muted small">Theorem name practice</p><div role="group" aria-label="Theorem practice difficulty"><button type="button" class="btn small" data-theorem-mode="easy">Easy · multiple choice</button><button type="button" class="btn small" data-theorem-mode="hard">Hard · type the name</button></div>`;
+    const shareTools = section.querySelector('.module-share-tools');
+    section.insertBefore(modeTools, shareTools || null);
+    const syncMode = () => modeTools.querySelectorAll('[data-theorem-mode]').forEach((button) => {
+      const active = (readPreferences().theoremMode || 'easy') === button.dataset.theoremMode;
+      button.classList.toggle('primary', active); button.setAttribute('aria-pressed', String(active));
+    });
+    modeTools.querySelectorAll('[data-theorem-mode]').forEach((button) => button.addEventListener('click', () => {
+      writePreferences({ ...readPreferences(), theoremMode:button.dataset.theoremMode }); syncMode();
+      if (app.currentQuestion?.theoremDrill) { app.answered = false; app.nextQuestion({ keepFeedback:false }); }
+    }));
+    syncMode();
     section.querySelectorAll('[data-premium-lock]').forEach((button) => button.addEventListener('click', (event) => {
       event.preventDefault(); event.stopPropagation();
       document.querySelector('.shared-prompt-premium')?.remove();
@@ -109,7 +152,7 @@
       app.openPremiumAccess?.();
       if (premium) { premium.hidden = false; premium.style.display = 'flex'; premium.style.zIndex = '1400'; }
     }));
-    section.querySelectorAll('[data-geometry-module]:not(:disabled)').forEach((box) => box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...section.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); writePreferences({ ...readPreferences(), modules: app.state.geometryModules }); app.saveSoon(); app.updateHomeSummary?.(); }));
+    section.querySelectorAll('[data-geometry-module]:not(:disabled)').forEach((box) => box.addEventListener('change', () => { app.state.geometryModules = Object.fromEntries([...section.querySelectorAll('[data-geometry-module]')].map((item) => [item.dataset.geometryModule, item.checked])); writePreferences({ ...readPreferences(), modules: app.state.geometryModules }); app.saveSoon(); app.updateHomeSummary?.(); window.dispatchEvent(new Event('learning-modules-changed')); }));
     section.querySelectorAll('details.module-group').forEach((group) => group.addEventListener('toggle', () => { const summary = group.querySelector('summary').textContent; const groups = { ...readPreferences().groups, [summary.startsWith('Theorems, Definitions') ? 'reference' : `unit-${summary.slice(-1)}`]: group.open }; writePreferences({ ...readPreferences(), groups }); }));
   }
 
@@ -151,9 +194,11 @@
 
   document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
     const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' }); labels();
+    const moduleParam = new URLSearchParams(location.search).get('modules');
+    if (moduleParam !== null) { const chosen = new Set(moduleParam.split(',').filter((key) => byKey[key])); app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, chosen.has(module.key)])); writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); }
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && QUESTIONS[key]?.length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
-    app.getModuleCounts = (key) => ({ total:(QUESTIONS[key] || []).length, available:poolFor(app,key).length });
+    app.getModuleCounts = (key) => ({ total:poolFor(app,key).length, available:poolFor(app,key).length });
     app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const item = pool[Math.floor(Math.random() * pool.length)]; return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };
     app.updateHomeSummary = () => { const node = document.getElementById('homeModuleSummary'); if (node) node.textContent = app.getEnabledModules().map((key) => byKey[key].name).join(', ') || 'No sections selected yet'; };
     app.getSessionTarget = () => app.hasPremiumAccess() ? 18 : 10;
