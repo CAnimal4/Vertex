@@ -1,7 +1,7 @@
 /* Vertex Geometry curriculum adapter. Source: scanned classroom PDFs in ../Canvas Geometry PDFs. */
 (() => {
   'use strict';
-  window.LearningAppShared?.registerUpdate({id:'vertex-theorem-review-modes-20260927',app:'vertex',title:'Get ready for Tuesday’s test: theorem practice',copy:'Review theorem, postulate, definition, and property names in the Geometry reference module. Start with Easy multiple choice, then switch to Hard typing when you’re ready.',action:'vertex-theorems'});
+  window.LearningAppShared?.registerUpdate({id:'vertex-theorem-review-modes-20260927-2',app:'vertex',title:'Get ready for Monday or Tuesday tests: theorem practice',copy:'Review theorem, postulate, definition, and property names in the Geometry reference module. Start with Easy multiple choice, then switch to Hard typing when you’re ready.',action:'vertex-theorems'});
 
   const MODULES = [
     { key:'geometry-1-1', unit:'unit-1', section:'1.1', name:'Points, Lines, and Planes', sources:['01-01_points-lines-planes_annotated.pdf'], premium:false },
@@ -19,7 +19,7 @@
     { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:true },
     { key:'geometry-3-5', unit:'unit-3', section:'3.5', name:'Equations of Parallel and Perpendicular Lines', sources:['3.5 Equations of Parallel and Perpendicular Lines.pdf','3.5 Equations of Parallel and Perpendicular Lines - annotated-1.pdf'], premium:false },
     { key:'geometry-review-2', unit:'unit-3', section:'3.99', name:'Test 2 Review', sources:['03-99_review-for-test-2_answers.pdf'], premium:true },
-    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:false }
+    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:true }
   ];
   const byKey = Object.fromEntries(MODULES.map((module) => [module.key, module]));
 
@@ -148,7 +148,8 @@
       const active = (readPreferences().theoremMode || 'easy') === button.dataset.theoremMode;
       button.classList.toggle('primary', active); button.setAttribute('aria-pressed', String(active));
     });
-    modeTools.querySelectorAll('[data-theorem-mode]').forEach((button) => button.addEventListener('click', () => {
+    modeTools.querySelectorAll('[data-theorem-mode]').forEach((button) => button.addEventListener('click', (event) => {
+      event.stopPropagation();
       writePreferences({ ...readPreferences(), theoremMode:button.dataset.theoremMode }); syncMode();
       if (app.currentQuestion?.theoremDrill) { app.answered = false; app.nextQuestion({ keepFeedback:false }); }
     }));
@@ -159,7 +160,8 @@
       const settings = document.getElementById('settingsOverlay');
       if (settings) { settings.hidden = true; settings.style.display = 'none'; }
       const premium = document.getElementById('premiumOverlay');
-      if (premium) { premium.hidden = false; premium.style.display = 'flex'; premium.style.zIndex = '1400'; }
+      if (window.openPremiumFromLock) { window.openPremiumFromLock(); return; }
+      if (premium) { premium.hidden = false; premium.style.display = 'flex'; premium.style.zIndex = '2147483000'; }
       app.openPremiumAccess?.();
       if (premium) { premium.hidden = false; premium.style.display = 'flex'; premium.style.zIndex = '1400'; }
     }));

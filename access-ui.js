@@ -85,15 +85,21 @@
     if (overlay) {
       // The shared bootstrap intentionally hides overlays with the HTML hidden
       // attribute. App.openModal only changes display, so clear hidden here too.
+      if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
       overlay.hidden = false;
-      overlay.style.display = 'flex';
-      overlay.style.zIndex = '1400';
+      overlay.inert = false;
+      overlay.style.setProperty('position', 'fixed', 'important');
+      overlay.style.setProperty('inset', '0', 'important');
+      overlay.style.setProperty('display', 'flex', 'important');
+      overlay.style.setProperty('visibility', 'visible', 'important');
+      overlay.style.setProperty('z-index', '2147483000', 'important');
     }
     app?.openPremiumAccess?.();
     if (overlay) {
       overlay.hidden = false;
-      overlay.style.display = 'flex';
-      overlay.style.zIndex = '1400';
+      overlay.inert = false;
+      overlay.style.setProperty('display', 'flex', 'important');
+      overlay.style.setProperty('z-index', '2147483000', 'important');
       window.setTimeout(() => overlay.querySelector('input,button')?.focus?.(), 0);
     }
   }
