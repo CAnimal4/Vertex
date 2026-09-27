@@ -131,8 +131,16 @@
     const modeTools = document.createElement('div');
     modeTools.className = 'theorem-mode-tools';
     modeTools.innerHTML = `<p class="muted small">Theorem name practice</p><div role="group" aria-label="Theorem practice difficulty"><button type="button" class="btn small" data-theorem-mode="easy">Easy · multiple choice</button><button type="button" class="btn small" data-theorem-mode="hard">Hard · type the name</button></div>`;
-    const shareTools = section.querySelector('.module-share-tools');
-    section.insertBefore(modeTools, shareTools || null);
+    const shareTools = document.createElement('div'); shareTools.className = 'module-share-tools';
+    shareTools.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
+    section.append(modeTools, shareTools);
+    shareTools.querySelector('#shareModulesBtn').addEventListener('click', async () => {
+      const selected = [...section.querySelectorAll('[data-geometry-module]:checked')].map((input) => input.dataset.geometryModule);
+      const query = new URLSearchParams(location.search); query.set('modules', selected.join(','));
+      const url = `${location.origin}${location.pathname}?${query}${location.hash}`; history.replaceState(null, '', url);
+      try { await navigator.clipboard.writeText(url); shareTools.querySelector('#moduleShareStatus').textContent = 'Link copied.'; }
+      catch (_) { window.prompt('Copy this module link:', url); }
+    });
     const syncMode = () => modeTools.querySelectorAll('[data-theorem-mode]').forEach((button) => {
       const active = (readPreferences().theoremMode || 'easy') === button.dataset.theoremMode;
       button.classList.toggle('primary', active); button.setAttribute('aria-pressed', String(active));
