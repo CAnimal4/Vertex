@@ -109,6 +109,7 @@
       setCookie(cookieName);
     };
     const openPremium = () => {
+      if (typeof window.openPremiumFromLock === 'function') { window.openPremiumFromLock(); return; }
       const app = window.SpanishPracticeApp || window.VertexApp;
       if (typeof app?.openPremiumAccess === 'function') app.openPremiumAccess();
       else window.setTimeout(() => document.getElementById('premiumBtn')?.click(), 0);
