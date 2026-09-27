@@ -135,7 +135,7 @@
     shareTools.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
     section.append(modeTools, shareTools);
     shareTools.querySelector('#shareModulesBtn').addEventListener('click', async () => {
-      const selected = [...section.querySelectorAll('[data-geometry-module]:checked')].map((input) => input.dataset.geometryModule);
+      const selected = [...section.querySelectorAll('[data-geometry-module]:checked:not(:disabled)')].map((input) => input.dataset.geometryModule);
       const query = new URLSearchParams(location.search); query.set('modules', selected.join(','));
       const url = `${location.origin}${location.pathname}?${query}${location.hash}`; history.replaceState(null, '', url);
       try { await navigator.clipboard.writeText(url); shareTools.querySelector('#moduleShareStatus').textContent = 'Link copied.'; }
@@ -203,7 +203,7 @@
   document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
     const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' }); labels();
     const moduleParam = new URLSearchParams(location.search).get('modules');
-    if (moduleParam !== null) { const chosen = new Set(moduleParam.split(',').filter((key) => byKey[key])); app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, chosen.has(module.key)])); writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); }
+    if (moduleParam !== null) { const chosen = new Set(moduleParam.split(',').filter((key) => byKey[key] && (!byKey[key].premium || app.hasPremiumAccess()))); app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, chosen.has(module.key)])); writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); }
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && QUESTIONS[key]?.length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
     app.getModuleCounts = (key) => ({ total:poolFor(app,key).length, available:poolFor(app,key).length });
