@@ -1,7 +1,7 @@
 /* Vertex Geometry curriculum adapter. Source: scanned classroom PDFs in ../Canvas Geometry PDFs. */
 (() => {
   'use strict';
-  window.LearningAppShared?.registerUpdate({id:'vertex-geometry-3-5-2026-09',app:'vertex',title:'New: Lesson 3-5 practice',copy:'Practice equations of parallel and perpendicular lines in Vertex.',tourSteps:[{title:'Open Modules',copy:'Choose the new Lesson 3-5 section from Unit 3.',target:'modules'},{title:'Try a practice prompt',copy:'Work with parallel and perpendicular slopes, then write line equations.',target:'practice'}]});
+  window.LearningAppShared?.registerUpdate({id:'vertex-theorem-review-modes-20260927',app:'vertex',title:'Get ready for Tuesday’s test: theorem practice',copy:'Review theorem, postulate, definition, and property names in the Geometry reference module. Start with Easy multiple choice, then switch to Hard typing when you’re ready.',action:'vertex-theorems'});
 
   const MODULES = [
     { key:'geometry-1-1', unit:'unit-1', section:'1.1', name:'Points, Lines, and Planes', sources:['01-01_points-lines-planes_annotated.pdf'], premium:false },
@@ -19,7 +19,7 @@
     { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:true },
     { key:'geometry-3-5', unit:'unit-3', section:'3.5', name:'Equations of Parallel and Perpendicular Lines', sources:['3.5 Equations of Parallel and Perpendicular Lines.pdf','3.5 Equations of Parallel and Perpendicular Lines - annotated-1.pdf'], premium:false },
     { key:'geometry-review-2', unit:'unit-3', section:'3.99', name:'Test 2 Review', sources:['03-99_review-for-test-2_answers.pdf'], premium:true },
-    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:true }
+    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:false }
   ];
   const byKey = Object.fromEntries(MODULES.map((module) => [module.key, module]));
 
@@ -133,7 +133,10 @@
     modeTools.innerHTML = `<p class="muted small">Theorem name practice</p><div role="group" aria-label="Theorem practice difficulty"><button type="button" class="btn small" data-theorem-mode="easy">Easy · multiple choice</button><button type="button" class="btn small" data-theorem-mode="hard">Hard · type the name</button></div>`;
     const shareTools = document.createElement('div'); shareTools.className = 'module-share-tools';
     shareTools.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
-    section.append(modeTools, shareTools);
+    const referenceContent = section.querySelector('[data-geometry-module="geometry-reference"]')?.closest('.toggle')?.firstElementChild;
+    if (referenceContent) referenceContent.append(modeTools);
+    else section.append(modeTools);
+    section.append(shareTools);
     shareTools.querySelector('#shareModulesBtn').addEventListener('click', async () => {
       const selected = [...section.querySelectorAll('[data-geometry-module]:checked:not(:disabled)')].map((input) => input.dataset.geometryModule);
       const query = new URLSearchParams(location.search); query.set('modules', selected.join(','));
