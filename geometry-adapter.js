@@ -96,7 +96,7 @@
     if (key !== 'geometry-reference') return base;
     const mode = readPreferences().theoremMode === 'hard' ? 'text' : 'mcq';
     const facts = base.filter((item) => /Postulate|Theorem|Property|Definition/i.test(item.expectedDisplay || '') && !/parallel lines|perpendicular lines|reasons column/i.test(item.expectedDisplay || ''));
-    return [...base, ...facts.map((item) => theoremQuestion({ ...item, id:`theorem-${item.id}`, mode,
+    return [...base.filter((item) => !facts.includes(item)), ...facts.map((item) => theoremQuestion({ ...item, id:`theorem-${item.id}`, mode,
       prompt:`${mode === 'mcq' ? 'Choose' : 'Type the exact name of'} the theorem, postulate, definition, or property that fits: ${item.prompt.replace(/\?$/,'')}${mode === 'mcq' ? '?' : '.'}`
     }, facts, mode))];
   };
