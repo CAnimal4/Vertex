@@ -970,3 +970,10 @@
 .claro-premium-modal .modal-actions{display:flex;justify-content:flex-end;margin-top:2px}.claro-premium-modal .modal-actions .btn{min-width:180px;justify-content:center}.claro-premium-modal #premiumFeedback{margin:10px 0 0;padding:13px 14px;border-radius:14px;background:#eef2ff;color:#3730a3}.claro-premium-modal .premium-request-form{background:#f8f9ff;border-color:#dbe4ff}.claro-premium-modal .premium-request-form .btn{justify-content:center}
 .premium-badge{display:inline-grid;place-items:center;width:1.45rem;height:1.45rem;margin-left:.35rem;padding:0;border:1px solid transparent;border-radius:999px;font-size:.78rem;line-height:1;vertical-align:middle;cursor:help;outline:none}.premium-badge-locked{background:#fff0f0;color:#b42318;border-color:#f3b7b2}.premium-badge-reduced{background:#fff8df;color:#8a5a00;border-color:#ead28b}.premium-badge:hover,.premium-badge:focus-visible{transform:translateY(-1px);box-shadow:0 0 0 3px rgba(37,99,235,.25)}#premiumOverlay{z-index:1400!important}
  .library-overlay[hidden]{display:none!important}
+
+/* Make Test 2's scratch-paper workflow visible before a learner enables it. */
+.test2-review-module{align-items:flex-start}
+.module-practice-note{margin-top:5px;color:#425b4c;font-size:.76rem;line-height:1.35;font-weight:750}
+.test2-scratch-coach{display:grid;gap:4px;margin:0 0 12px;padding:12px 14px;border:1px solid #c9dfd0;border-radius:12px;background:linear-gradient(135deg,#f0f8f1,#f6f9ff);color:#163825}
+.test2-scratch-coach strong{font-size:.94rem;font-weight:850}
+.test2-scratch-coach span{font-size:.85rem;line-height:1.45;color:#40534a}
