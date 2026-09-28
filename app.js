@@ -2140,9 +2140,31 @@ mean/nice
   function pickByWeakScore(arr, scoreMap, recencySet = new Set()) {
     if (!arr.length) return null;
     const practiceApp = scoreMap?.__practiceApp;
+    const rotation = practiceApp?.activeSession?.questionRotation;
+    let candidates = arr;
+    let isRetryPool = false;
+    const moduleKey = practiceApp?.__generatingModuleKey;
+    const seen = moduleKey ? rotation?.seenByModule?.get(moduleKey) : null;
+    if (seen?.size) {
+      const fresh = arr.filter((item) => !seen.has(String(item.id)));
+      if (fresh.length) candidates = fresh;
+      else {
+        const due = arr.filter((item) => {
+          const key = `${moduleKey}:${item.id}`;
+          const missedAt = rotation.missedAt.get(key);
+          return missedAt != null && !rotation.retried.has(key) && rotation.uniqueAnswered - missedAt >= 4;
+        });
+        const missed = due.length ? due : arr.filter((item) => rotation.missedAt.has(`${moduleKey}:${item.id}`) && !rotation.retried.has(`${moduleKey}:${item.id}`));
+        if (missed.length) { candidates = missed; isRetryPool = true; }
+      }
+    }
+    const rememberRetry = (item) => {
+      if (isRetryPool && moduleKey && rotation) rotation.retried.add(`${moduleKey}:${item.id}`);
+      return item;
+    };
     if (practiceApp?.state?.settings?.prioritizeWeakQuestions) {
       const stats = practiceApp.state.userStats || {};
-      const weights = arr.map((item) => {
+      const weights = candidates.map((item) => {
         const history = stats[item.id];
         const attempts = Number(history?.attempts) || 0;
         const correct = Math.min(attempts, Number(history?.correct) || 0);
@@ -2155,13 +2177,13 @@ mean/nice
       });
       const total = weights.reduce((sum, weight) => sum + weight, 0);
       let random = Math.random() * total;
-      for (let i = 0; i < arr.length; i++) {
+      for (let i = 0; i < candidates.length; i++) {
         random -= weights[i];
-        if (random <= 0) return arr[i];
+        if (random <= 0) return rememberRetry(candidates[i]);
       }
-      return arr[arr.length - 1];
+      return rememberRetry(candidates[candidates.length - 1]);
     }
-    const weights = arr.map((item) => {
+    const weights = candidates.map((item) => {
       const s = scoreMap[item.id] ?? 2;
       const weak = 1 + (5 - s);
       const recentPenalty = recencySet.has(item.id) ? 0.45 : 1;
@@ -2169,11 +2191,11 @@ mean/nice
     });
     const total = weights.reduce((a, b) => a + b, 0);
     let r = Math.random() * total;
-    for (let i = 0; i < arr.length; i++) {
+    for (let i = 0; i < candidates.length; i++) {
       r -= weights[i];
-      if (r <= 0) return arr[i];
+      if (r <= 0) return rememberRetry(candidates[i]);
     }
-    return arr[arr.length - 1];
+    return rememberRetry(candidates[candidates.length - 1]);
   }
 
 
@@ -5295,6 +5317,7 @@ mean/nice
     },
 
     startPracticeSession() {
+      this.recentByModule = Object.fromEntries(Object.keys(this.recentByModule || {}).map((key) => [key, []]));
       this.activeSession = {
         id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         level: this.currentLevel === 'spanish2' ? 'spanish2' : 'spanish1',
@@ -5304,6 +5327,7 @@ mean/nice
         incorrect: 0,
         currentStreak: 0,
         bestStreak: 0,
+        questionRotation: { seenByModule: new Map(), missedAt: new Map(), retried: new Set(), answered: new Set(), uniqueAnswered: 0 },
         modules: new Set(),
         sectionCounts: { preterite: 0, imperfect: 0, vocabulary: 0, translation: 0, choice: 0 },
         target: this.getSessionTarget()
@@ -5324,6 +5348,14 @@ mean/nice
       if (!this.activeSession || this.sessionQuestionRecorded) return;
       this.sessionQuestionRecorded = true;
       const session = this.activeSession;
+      const question = this.currentQuestion;
+      if (question?.id && question.module) {
+        const rotation = session.questionRotation || (session.questionRotation = { seenByModule:new Map(), missedAt:new Map(), retried:new Set(), answered:new Set(), uniqueAnswered:0 });
+        const key = `${question.module}:${question.id}`;
+        if (!rotation.answered.has(key)) { rotation.answered.add(key); rotation.uniqueAnswered += 1; }
+        if (correct) { rotation.missedAt.delete(key); rotation.retried.delete(key); }
+        else rotation.missedAt.set(key, rotation.uniqueAnswered);
+      }
       session.answered += 1;
       if (correct) {
         session.correct += 1;
@@ -5579,6 +5611,16 @@ mean/nice
     },
 
     chooseModule(enabled) {
+      const rotation = this.activeSession?.questionRotation;
+      if (rotation && enabled.length > 1) {
+        const freshModules = enabled.filter((key) => {
+          const seen = rotation.seenByModule.get(key)?.size || 0;
+          const available = this.getModuleCounts(key)?.available;
+          if (available == null || seen < available) return true;
+          return [...rotation.missedAt.entries()].some(([questionKey, missedAt]) => questionKey.startsWith(`${key}:`) && !rotation.retried.has(questionKey) && rotation.uniqueAnswered - missedAt >= 4);
+        });
+        if (freshModules.length) enabled = freshModules;
+      }
       // Weighted rotation among enabled modules (bias lower-score modules).
       const mix = Math.max(0, Math.min(100, this.state.moduleChoices.practiceMix ?? 50)) / 100;
       const weights = enabled.map((key) => {
@@ -5730,18 +5772,59 @@ mean/nice
       buf.push(id);
       while (buf.length > 6) buf.shift();
       this.recentByModule[moduleKey] = buf;
+      if (id != null && this.activeSession?.questionRotation) {
+        const rotation = this.activeSession.questionRotation;
+        if (!rotation.seenByModule.has(moduleKey)) rotation.seenByModule.set(moduleKey, new Set());
+        rotation.seenByModule.get(moduleKey).add(String(id));
+      }
     },
 
     generateQuestion(moduleKey) {
-      if (moduleKey === 'numbers') return this.generateNumbersQuestion();
-      if (moduleKey === 'vocab') return this.generateVocabQuestion();
-      if (moduleKey === 'commands') return this.generateCommandQuestion();
-      if (moduleKey === 'reflexive') return this.generateReflexiveQuestion();
-      if (moduleKey === 'tenses') return this.generateTensesQuestion();
-      if (modules[moduleKey] && typeof modules[moduleKey].generateQuestion === 'function') {
-        return modules[moduleKey].generateQuestion(this);
+      const rotation = this.activeSession?.questionRotation;
+      const generate = (key) => {
+        const previousModuleKey = this.__generatingModuleKey;
+        this.__generatingModuleKey = key;
+        try {
+          if (key === 'numbers') return this.generateNumbersQuestion();
+          if (key === 'vocab') return this.generateVocabQuestion();
+          if (key === 'commands') return this.generateCommandQuestion();
+          if (key === 'reflexive') return this.generateReflexiveQuestion();
+          if (key === 'tenses') return this.generateTensesQuestion();
+          if (modules[key] && typeof modules[key].generateQuestion === 'function') return modules[key].generateQuestion(this);
+          return null;
+        } finally { this.__generatingModuleKey = previousModuleKey; }
+      };
+      const unseen = (question) => {
+        if (!question || !rotation) return !!question;
+        const seen = rotation.seenByModule.get(question.module || moduleKey);
+        return !seen?.has(String(question.id));
+      };
+      const retryReady = (question) => {
+        if (!question || !rotation) return false;
+        const key = `${question.module || moduleKey}:${question.id}`;
+        const missedAt = rotation.missedAt.get(key);
+        return missedAt != null && !rotation.retried.has(key) && rotation.uniqueAnswered - missedAt >= 4;
+      };
+      let question = generate(moduleKey);
+      if (!rotation || unseen(question)) return question;
+      if (retryReady(question)) { rotation.retried.add(`${question.module || moduleKey}:${question.id}`); return question; }
+      for (let attempt = 0; attempt < 24; attempt++) {
+        const candidate = generate(moduleKey);
+        if (unseen(candidate)) return candidate;
+        if (retryReady(candidate)) { rotation.retried.add(`${candidate.module || moduleKey}:${candidate.id}`); return candidate; }
+        question = candidate || question;
       }
-      return null;
+      for (const alternate of this.getEnabledModules().filter((key) => key !== moduleKey)) {
+        const seen = rotation.seenByModule.get(alternate);
+        const count = this.getModuleCounts(alternate)?.available;
+        if (count != null && (seen?.size || 0) >= count) continue;
+        for (let attempt = 0; attempt < 24; attempt++) {
+          const candidate = generate(alternate);
+          if (unseen(candidate)) return candidate;
+          if (retryReady(candidate)) { rotation.retried.add(`${candidate.module || alternate}:${candidate.id}`); return candidate; }
+        }
+      }
+      return question;
     },
 
     // ----- Numbers -----
