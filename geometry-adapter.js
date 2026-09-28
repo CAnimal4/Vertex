@@ -240,7 +240,9 @@
     section.hidden = true;
     section.innerHTML = `<h2 id="proofBuilderTitle">Complete a two-column proof</h2><p class="muted">Choose a proof exercise. The givens and goal are provided; fill each blank with a statement and its reason.</p><div class="proof-exercise-controls"><label>Exercise<select id="proofExercise"></select></label><button class="btn" id="proofHint" type="button">Hint</button><button class="btn" id="proofReset" type="button">Reset proof</button></div><div class="proof-problem"><div><small>GIVEN</small><p id="proofGiven"></p></div><div><small>PROVE</small><p id="proofGoal"></p></div></div><table class="proof-table"><thead><tr><th>#</th><th>Statement</th><th>Reason</th></tr></thead><tbody id="proofSteps"></tbody></table><div id="proofStatus" class="feedback neutral" aria-live="polite">Fill in each proof row, then check your work.</div><div class="proof-actions"><button class="btn primary" id="proofCheck" type="button">Check proof</button><button class="btn" id="proofShow" type="button">Show one solution</button></div>`;
     document.querySelector('#qaSection')?.after(section);
-    const proofModules = new Set(['geometry-2-5','geometry-2-6','geometry-3-3','geometry-3-4','geometry-review-2','geometry-reference']);
+    // The theorem reference teaches proof vocabulary, but it is not the guided
+    // proof builder module. Keep the builder out of theorem-only practice.
+    const proofModules = new Set(['geometry-2-5','geometry-2-6','geometry-3-3','geometry-3-4','geometry-review-2']);
     const syncAvailability = () => { const selected = [...document.querySelectorAll('[data-geometry-module]:checked')].map((box) => box.dataset.geometryModule); section.hidden = !selected.some((key) => proofModules.has(key)); };
     syncAvailability();
     app.syncProofBuilderAvailability = syncAvailability;
