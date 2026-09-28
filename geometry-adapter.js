@@ -209,7 +209,7 @@
     const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' }); labels();
     const moduleParam = new URLSearchParams(location.search).get('modules');
     if (moduleParam !== null) { const chosen = new Set(moduleParam.split(',').filter((key) => byKey[key] && (!byKey[key].premium || app.hasPremiumAccess()))); app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, chosen.has(module.key)])); writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); }
-    app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && QUESTIONS[key]?.length);
+    app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && poolFor(app,key).length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
     app.getModuleCounts = (key) => ({ total:poolFor(app,key).length, available:poolFor(app,key).length });
     app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const item = pool[Math.floor(Math.random() * pool.length)]; return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };

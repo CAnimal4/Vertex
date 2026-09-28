@@ -5206,7 +5206,11 @@ mean/nice
     },
 
     enterPractice() {
-      if (this.currentLevel === 'spanish2' && !this.getEnabledModules().length) {
+      // Don't start a session that cannot produce a question. Adapters can
+      // filter premium-locked modules or modules whose questions are hidden.
+      const enabledModules = this.getEnabledModules();
+      const availableModules = enabledModules.filter((key) => (this.getModuleCounts(key)?.available ?? 0) > 0);
+      if (!availableModules.length) {
         this.openSettings();
         return;
       }
