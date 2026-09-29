@@ -130,7 +130,7 @@
 
   function installModuleSharing(app) {
     const section = document.getElementById('moduleSettingsSection');
-    if (!section || section.querySelector('#shareModulesBtn')) return;
+    if (!section || section.querySelector('#shareModulesBtn') || window.VertexApp) return;
     const bar = document.createElement('div'); bar.className = 'module-share-tools';
     bar.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
     section.append(bar);

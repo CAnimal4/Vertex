@@ -232,6 +232,12 @@
   };
   const writePreferences = (preferences) => { try { document.cookie = `${PREF_COOKIE}=${encodeURIComponent(JSON.stringify(preferences))}; max-age=31536000; path=/; SameSite=Lax`; } catch (_) {} };
 
+  function ensureShareStatus() {
+    let status = document.getElementById('vertexShareLinkStatus');
+    if (!status) { status = document.createElement('aside'); status.id = 'vertexShareLinkStatus'; status.className = 'vertex-share-link-status'; status.setAttribute('role','status'); status.setAttribute('aria-live','polite'); document.body.append(status); }
+    return status;
+  }
+
   function installMathKeyboard() {
     const block = document.getElementById('textBlock'); const input = document.getElementById('answerInput');
     if (!block || !input || document.getElementById('vertexMathKeyboard')) return;
@@ -263,11 +269,11 @@
     else section.append(modeTools);
     section.append(shareTools);
     shareTools.querySelector('#shareModulesBtn').addEventListener('click', async () => {
-      const selected = [...section.querySelectorAll('[data-geometry-module]:checked:not(:disabled)')].map((input) => input.dataset.geometryModule);
+      const selected = [...section.querySelectorAll('[data-geometry-module]:checked')].map((input) => input.dataset.geometryModule);
       const query = new URLSearchParams(location.search); query.set('modules', selected.join(','));
       const referencePrefs = readPreferences(); query.set('theoremMode', referencePrefs.theoremMode || 'easy'); if (referencePrefs.theoremHardOnly) query.set('hardOnly','1'); else query.delete('hardOnly');
-      const url = `${location.origin}${location.pathname}?${query}${location.hash}`; history.replaceState(null, '', url);
-      try { await navigator.clipboard.writeText(url); shareTools.querySelector('#moduleShareStatus').textContent = 'Link copied.'; }
+      const url = `${location.origin}${location.pathname}?${query}${location.hash}`;
+      try { await navigator.clipboard.writeText(url); shareTools.querySelector('#moduleShareStatus').textContent = 'Link copied. Opening this link starts practice with the selected modules.'; }
       catch (_) { window.prompt('Copy this module link:', url); }
     });
     const syncMode = () => modeTools.querySelectorAll('[data-theorem-mode]').forEach((button) => {
@@ -355,7 +361,9 @@
     const app = window.SpanishPracticeApp; if (!app) return; window.VertexApp = app; labels(); app.updateDocumentTitle = () => { document.title = 'Vertex — Accelerated Geometry'; }; const savedPreferences = readPreferences(); if (savedPreferences.modules) app.state.geometryModules = savedPreferences.modules; app.setLevel('geometry',{ historyMode:'replace' }); labels();
     const params = new URLSearchParams(location.search);
     const moduleParam = params.has('modules') ? params.get('modules') : null;
-    if (moduleParam !== null) { const chosen = new Set(moduleParam.split(',').filter((key) => byKey[key] && (!byKey[key].premium || app.hasPremiumAccess()))); app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, chosen.has(module.key)])); writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); }
+    const sharedSelection = moduleParam !== null;
+    let requestedModuleKeys = [];
+    if (sharedSelection) requestedModuleKeys = [...new Set(moduleParam.split(',').map((key) => key.trim()).filter((key) => byKey[key]))];
     if (params.has('theoremMode') || params.has('hardOnly')) writePreferences({ ...readPreferences(), theoremMode:params.get('theoremMode') === 'hard' ? 'hard' : 'easy', theoremHardOnly:params.get('hardOnly') === '1' });
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && poolFor(app,key).length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
@@ -363,7 +371,8 @@
     app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const rotation = app.activeSession?.questionRotation; const seen = rotation?.seenByModule?.get(key); const fresh = seen?.size ? pool.filter((item) => !seen.has(String(item.id))) : pool; const due = rotation && !fresh.length ? pool.filter((item) => { const questionKey = `${key}:${item.id}`, missedAt = rotation.missedAt.get(questionKey); return missedAt != null && !rotation.retried.has(questionKey) && rotation.uniqueAnswered - missedAt >= 4; }) : []; const candidates = fresh.length ? fresh : due.length ? due : pool; const item = candidates[Math.floor(Math.random() * candidates.length)]; if (!fresh.length && due.length) rotation.retried.add(`${key}:${item.id}`); return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };
     app.updateHomeSummary = () => { const node = document.getElementById('homeModuleSummary'); if (node) node.textContent = app.getEnabledModules().map((key) => byKey[key].name).join(', ') || 'No sections selected yet'; app.syncProofBuilderAvailability?.(); };
     app.getSessionTarget = () => app.hasPremiumAccess() ? 18 : 10;
-    const originalRefresh = app.refreshSettingsUI.bind(app); app.refreshSettingsUI = (...args) => { const result = originalRefresh(...args); labels(); renderSettings(app); app.updateHomeSummary(); return result; };
+    const originalRefresh = app.refreshSettingsUI.bind(app);
+    app.refreshSettingsUI = (...args) => { const result = originalRefresh(...args); labels(); renderSettings(app); app.updateHomeSummary(); return result; };
     const originalRender = app.renderQuestion.bind(app); app.renderQuestion = (question, options) => { originalRender(question, options); const title = document.getElementById('qaTitle'); if (title) title.textContent = byKey[question?.module]?.name || 'Geometry'; document.getElementById('answerInput')?.setAttribute('placeholder','Type a geometry answer...'); const prompt = document.getElementById('qaPrompt'); let coach = document.getElementById('test2ScratchCoach'); if (question?.module === 'geometry-review-2' && prompt) { if (!coach) { coach = document.createElement('aside'); coach.id = 'test2ScratchCoach'; coach.className = 'test2-scratch-coach'; coach.setAttribute('aria-label','Scratch-paper-first test practice'); coach.innerHTML = '<strong>📝 Scratch paper first</strong><span>Write the slope, equation, distance setup, or angle relationship before you choose. Then submit to check your work and read the reasoning.</span>'; prompt.before(coach); } coach.hidden = false; } else if (coach) coach.hidden = true; };
     window.VertexMathAnswer = { normalize:normalizeAnswer, answerSet }; installMathKeyboard(); installProofBuilder(app); renderSettings(app); app.updateHomeSummary();
     app.runAutomatedChecks = () => {
@@ -389,6 +398,19 @@
       const output=document.getElementById('checksOutput'); if(output){output.className=`feedback ${results.every((item)=>item.ok)?'good':'bad'}`;output.innerHTML=`${results.map((item)=>`${item.ok?'✓':'✗'} ${item.label}`).join('<br>')}<br><small>Summary: ${results.filter((item)=>item.ok).length}/${results.length} passed</small>`;}
       return {pass:results.filter((item)=>item.ok).length,total:results.length,results};
     };
+    if (sharedSelection && requestedModuleKeys.length) {
+      const premiumSelection = requestedModuleKeys.some((key) => byKey[key].premium);
+      const status = document.getElementById('moduleShareStatus') || ensureShareStatus();
+      if (premiumSelection && !app.hasPremiumAccess?.()) {
+        app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, requestedModuleKeys.includes(module.key)]));
+        writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); renderSettings(app);
+        status.textContent = 'This link includes Premium modules. Unlock Premium to practice those selected modules.';
+      } else {
+        app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, requestedModuleKeys.includes(module.key)]));
+        writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); renderSettings(app); app.updateHomeSummary();
+        if (app.getEnabledModules().length) app.enterPractice();
+      }
+    }
     app.refreshSettingsUI();
   }, 0));
 })();
