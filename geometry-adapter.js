@@ -263,16 +263,24 @@
     const modeTools = document.createElement('div');
     modeTools.className = 'theorem-mode-tools';
     modeTools.innerHTML = `<div class="theorem-mode-heading"><div><strong>Rapid-fire rule practice</strong><span>Quick recognition, then type the rule name when ready.</span></div><label class="theorem-hard-toggle"><input type="checkbox" data-theorem-hard-only><span class="theorem-toggle-track" aria-hidden="true"></span><span><b>Hard rules only</b><small>Focus on rules marked HARD in your drill</small></span></label></div><div class="theorem-mode-buttons" role="group" aria-label="Answer format"><button type="button" class="btn small" data-theorem-mode="easy">Quick · tap an answer</button><button type="button" class="btn small" data-theorem-mode="hard">Challenge · type the rule</button></div><p class="theorem-mode-summary" aria-live="polite"></p>`;
+    const orderTools = document.createElement('div'); orderTools.className = 'theorem-mode-tools module-order-tools';
+    orderTools.innerHTML = `<div class="theorem-mode-heading"><div><strong>Question order</strong><span>The question counter keeps counting up when prompts are shuffled.</span></div><label class="theorem-hard-toggle"><input type="checkbox" data-question-shuffle><span class="theorem-toggle-track" aria-hidden="true"></span><span><b>Shuffle questions</b><small>Randomize each module's question order</small></span></label></div>`;
     const shareTools = document.createElement('div'); shareTools.className = 'module-share-tools';
     shareTools.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
     const referenceContent = section.querySelector('[data-geometry-module="geometry-reference"]')?.closest('.toggle')?.firstElementChild;
     if (referenceContent) referenceContent.append(modeTools);
     else section.append(modeTools);
-    section.append(shareTools);
+    section.append(orderTools, shareTools);
+    const shuffleToggle = orderTools.querySelector('[data-question-shuffle]');
+    shuffleToggle.checked = preferences.shuffleQuestionOrder !== false;
+    shuffleToggle.addEventListener('change', () => {
+      writePreferences({ ...readPreferences(), shuffleQuestionOrder:shuffleToggle.checked });
+      app.activeSession?.questionRotation?.orderByModule?.clear();
+    });
     shareTools.querySelector('#shareModulesBtn').addEventListener('click', async () => {
       const selected = [...section.querySelectorAll('[data-geometry-module]:checked')].map((input) => input.dataset.geometryModule);
       const query = new URLSearchParams(location.search); query.set('modules', selected.join(','));
-      const referencePrefs = readPreferences(); query.set('theoremMode', referencePrefs.theoremMode || 'easy'); if (referencePrefs.theoremHardOnly) query.set('hardOnly','1'); else query.delete('hardOnly');
+      const referencePrefs = readPreferences(); query.set('theoremMode', referencePrefs.theoremMode || 'easy'); if (referencePrefs.theoremHardOnly) query.set('hardOnly','1'); else query.delete('hardOnly'); query.set('shuffle',referencePrefs.shuffleQuestionOrder === false ? '0' : '1');
       const url = `${location.origin}${location.pathname}?${query}${location.hash}`;
       try { await navigator.clipboard.writeText(url); shareTools.querySelector('#moduleShareStatus').textContent = 'Link copied. Opening this link starts practice with the selected modules.'; }
       catch (_) { window.prompt('Copy this module link:', url); }
@@ -366,15 +374,52 @@
     let requestedModuleKeys = [];
     if (sharedSelection) requestedModuleKeys = [...new Set(moduleParam.split(',').map((key) => key.trim()).filter((key) => byKey[key]))];
     if (params.has('theoremMode') || params.has('hardOnly')) writePreferences({ ...readPreferences(), theoremMode:params.get('theoremMode') === 'hard' ? 'hard' : 'easy', theoremHardOnly:params.get('hardOnly') === '1' });
+    if (params.has('shuffle')) writePreferences({ ...readPreferences(), shuffleQuestionOrder:params.get('shuffle') !== '0' });
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && poolFor(app,key).length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
     app.getModuleCounts = (key) => ({ total:poolFor(app,key).length, available:poolFor(app,key).length });
-    app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const rotation = app.activeSession?.questionRotation; const seen = rotation?.seenByModule?.get(key); const fresh = seen?.size ? pool.filter((item) => !seen.has(String(item.id))) : pool; const due = rotation && (key === 'geometry-reference' || !fresh.length) ? pool.filter((item) => { const questionKey = `${key}:${item.id}`, missedAt = rotation.missedAt.get(questionKey); return missedAt != null && !rotation.retried.has(questionKey) && rotation.uniqueAnswered - missedAt >= 4; }) : []; const candidates = due.length ? due : fresh.length ? fresh : pool; const item = candidates[Math.floor(Math.random() * candidates.length)]; return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };
+    const createQuestionOrder = (ids,shuffle,random=Math.random) => {
+      const order=[...ids];
+      if (shuffle) for (let i=order.length-1;i>0;i--) { const j=Math.floor(random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+      return order;
+    };
+    app.generateQuestion = (key) => {
+      const pool = poolFor(app,key); if (!pool.length) return null;
+      const rotation = app.activeSession?.questionRotation;
+      const seen = rotation?.seenByModule?.get(key);
+      const fresh = seen?.size ? pool.filter((item) => !seen.has(String(item.id))) : pool;
+      const orderMap = rotation ? (rotation.orderByModule ||= new Map()) : null;
+      const ids = pool.map((item) => String(item.id));
+      let order = orderMap?.get(key);
+      if (!order || order.length !== ids.length || new Set(order).size !== ids.length || order.some((id) => !ids.includes(id))) {
+        order = createQuestionOrder(ids,readPreferences().shuffleQuestionOrder !== false);
+        orderMap?.set(key,order);
+      }
+      const itemById = new Map(pool.map((item) => [String(item.id),item]));
+      const rank = new Map(order.map((id,index) => [id,index]));
+      const due = rotation ? pool.filter((item) => {
+        const questionKey = `${key}:${item.id}`, missedAt = rotation.missedAt.get(questionKey);
+        return missedAt != null && !rotation.retried.has(questionKey) && rotation.uniqueAnswered - missedAt >= 4;
+      }).sort((a,b) => rank.get(String(a.id))-rank.get(String(b.id))) : [];
+      const candidates = due.length ? due : fresh.length ? order.map((id) => itemById.get(id)).filter((item) => item && fresh.includes(item)) : order.map((id) => itemById.get(id)).filter(Boolean);
+      const item = candidates[0];
+      return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) };
+    };
+    const originalRecordSessionAnswer = app.recordSessionAnswer.bind(app);
+    app.recordSessionAnswer = (correct) => {
+      const session=app.activeSession, question=app.currentQuestion, shouldCount=!!session&&!app.sessionQuestionRecorded&&!!question?.module;
+      originalRecordSessionAnswer(correct);
+      if (shouldCount) {
+        const rotation=session.questionRotation||(session.questionRotation={});
+        const counts=rotation.presentedCountByModule||(rotation.presentedCountByModule=new Map());
+        counts.set(question.module,(counts.get(question.module)||0)+1);
+      }
+    };
     app.updateHomeSummary = () => { const node = document.getElementById('homeModuleSummary'); if (node) node.textContent = app.getEnabledModules().map((key) => byKey[key].name).join(', ') || 'No sections selected yet'; app.syncProofBuilderAvailability?.(); };
     app.getSessionTarget = () => app.hasPremiumAccess() ? 18 : 10;
     const originalRefresh = app.refreshSettingsUI.bind(app);
     app.refreshSettingsUI = (...args) => { const result = originalRefresh(...args); labels(); renderSettings(app); app.updateHomeSummary(); return result; };
-    const originalRender = app.renderQuestion.bind(app); app.renderQuestion = (question, options) => { originalRender(question, options); const title = document.getElementById('qaTitle'); if (title) title.textContent = byKey[question?.module]?.name || 'Geometry'; document.getElementById('answerInput')?.setAttribute('placeholder','Type a geometry answer...'); const prompt = document.getElementById('qaPrompt'); let coach = document.getElementById('test2ScratchCoach'); if (question?.module === 'geometry-review-2' && prompt) { if (!coach) { coach = document.createElement('aside'); coach.id = 'test2ScratchCoach'; coach.className = 'test2-scratch-coach'; coach.setAttribute('aria-label','Scratch-paper-first test practice'); coach.innerHTML = '<strong>📝 Scratch paper first</strong><span>Write the slope, equation, distance setup, or angle relationship before you choose. Then submit to check your work and read the reasoning.</span>'; prompt.before(coach); } coach.hidden = false; } else if (coach) coach.hidden = true; let rapidCoach = document.getElementById('theoremRapidCoach'); if (question?.module === 'geometry-reference' && prompt) { if (!rapidCoach) { rapidCoach = document.createElement('aside'); rapidCoach.id = 'theoremRapidCoach'; rapidCoach.className = 'module-practice-note'; rapidCoach.setAttribute('aria-live','polite'); prompt.before(rapidCoach); } const seen = app.activeSession?.questionRotation?.seenByModule?.get('geometry-reference'); const count = poolFor(app,'geometry-reference').length; rapidCoach.textContent = `⚡ Rapid fire · Prompt ${Math.min(count, (seen?.size || 0) + 1)} of ${count} · ${question.theoremPhase || 'Name the rule'} · ${question.mode === 'mcq' ? 'tap an answer for instant feedback.' : 'type the rule name, then submit.'}`; rapidCoach.hidden = false; if (question.mode === 'mcq') { app.setFeedback('Tap an option for instant feedback.','neutral'); document.querySelectorAll('#mcqList input[type="radio"]').forEach((input) => input.addEventListener('change', () => { if (app.currentQuestion === question && !app.answered) app.submitAnswer(); }, { once:true })); } } else if (rapidCoach) rapidCoach.hidden = true; };
+    const originalRender = app.renderQuestion.bind(app); app.renderQuestion = (question, options) => { originalRender(question, options); const title = document.getElementById('qaTitle'); if (title) title.textContent = byKey[question?.module]?.name || 'Geometry'; document.getElementById('answerInput')?.setAttribute('placeholder','Type a geometry answer...'); const prompt = document.getElementById('qaPrompt'); let coach = document.getElementById('test2ScratchCoach'); if (question?.module === 'geometry-review-2' && prompt) { if (!coach) { coach = document.createElement('aside'); coach.id = 'test2ScratchCoach'; coach.className = 'test2-scratch-coach'; coach.setAttribute('aria-label','Scratch-paper-first test practice'); coach.innerHTML = '<strong>📝 Scratch paper first</strong><span>Write the slope, equation, distance setup, or angle relationship before you choose. Then submit to check your work and read the reasoning.</span>'; prompt.before(coach); } coach.hidden = false; } else if (coach) coach.hidden = true; let rapidCoach = document.getElementById('theoremRapidCoach'); if (question?.module === 'geometry-reference' && prompt) { if (!rapidCoach) { rapidCoach = document.createElement('aside'); rapidCoach.id = 'theoremRapidCoach'; rapidCoach.className = 'module-practice-note'; rapidCoach.setAttribute('aria-live','polite'); prompt.before(rapidCoach); } const count = poolFor(app,'geometry-reference').length; const answered = app.activeSession?.questionRotation?.presentedCountByModule?.get('geometry-reference') || 0; rapidCoach.textContent = `⚡ Rapid fire · Question ${Math.min(count,answered+1)}/${count} · ${question.theoremPhase || 'Name the rule'} · ${question.mode === 'mcq' ? 'tap an answer for instant feedback.' : 'type the rule name, then submit.'}`; rapidCoach.hidden = false; if (question.mode === 'mcq') { app.setFeedback('Tap an option for instant feedback.','neutral'); document.querySelectorAll('#mcqList input[type="radio"]').forEach((input) => input.addEventListener('change', () => { if (app.currentQuestion === question && !app.answered) app.submitAnswer(); }, { once:true })); } } else if (rapidCoach) rapidCoach.hidden = true; };
     window.VertexMathAnswer = { normalize:normalizeAnswer, answerSet }; installMathKeyboard(); installProofBuilder(app); renderSettings(app); app.updateHomeSummary();
     app.runAutomatedChecks = () => {
       const results = MODULES.map((module) => ({ok:(QUESTIONS[module.key]||[]).length>=6,label:`${module.name} has a varied question bank`}));
@@ -388,6 +433,9 @@
       results.push({ok:hardOnly.length===drillRules.filter((rule)=>rule.hard).length*2&&hardOnly.every((q)=>drillRules.find((rule)=>rule.name===q.theoremItemId)?.hard),label:'Hard-only filters to the rules marked HARD in the supplied drill'});
       results.push({ok:drillRules.every((rule)=>REFERENCE_ITEMS.some((item)=>canonicalName(item.name)===canonicalName(rule.name))&&MODULES.find((m)=>m.key==='geometry-reference').sources.includes(REFERENCE_ITEMS.find((item)=>canonicalName(item.name)===canonicalName(rule.name))?.source)),label:'Every supplied rule maps to an existing source PDF'});
       results.push({ok:easy.every((q)=>q.explanation.includes(q.theoremItemId)&&q.explanation.includes('Source:')),label:'Every rapid-fire answer explains the rule and names its source'});
+      const sampleOrder=['first','second','third'], orderedSample=createQuestionOrder(sampleOrder,false), shuffledSample=createQuestionOrder(sampleOrder,true,()=>0);
+      results.push({ok:orderedSample.join('|')===sampleOrder.join('|'),label:'Shuffle off preserves the source question order'});
+      results.push({ok:shuffledSample.length===sampleOrder.length&&new Set(shuffledSample).size===sampleOrder.length&&shuffledSample.join('|')!==sampleOrder.join('|'),label:'Shuffle on creates a complete, scrambled question order'});
       const retryPool=poolFor(app,'geometry-reference'), retryProbe=retryPool[0], leaveFresh=retryPool[1], savedSession=app.activeSession, seenIds=new Set(retryPool.map((q)=>String(q.id))); seenIds.delete(String(leaveFresh.id));
       app.activeSession={questionRotation:{seenByModule:new Map([['geometry-reference',seenIds]]),missedAt:new Map([[`geometry-reference:${retryProbe.id}`,0]]),retried:new Set(),uniqueAnswered:4}};
       const spacedRetry=app.generateQuestion('geometry-reference'); app.activeSession=savedSession;
