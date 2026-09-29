@@ -20,7 +20,7 @@
     { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:true },
     { key:'geometry-3-5', unit:'unit-3', section:'3.5', name:'Equations of Parallel and Perpendicular Lines', sources:['3.5 Equations of Parallel and Perpendicular Lines.pdf','3.5 Equations of Parallel and Perpendicular Lines - annotated-1.pdf'], premium:false },
     { key:'geometry-review-2', unit:'unit-3', section:'3.99', name:'Test 2 Review', sources:['03-99_review-for-test-2_answers.pdf'], premium:false },
-    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:false }
+    { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:false },
   ];
   const byKey = Object.fromEntries(MODULES.map((module) => [module.key, module]));
 
@@ -196,34 +196,35 @@
     {id:'deductive',name:'Deductive Reasoning',source:'02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf',easy:true,definition:'A conclusion follows logically from accepted facts and previously established rules.',application:'Which reasoning method uses definitions, postulates, and theorems to prove a conclusion?',hardApplication:'Starting with given parallel lines and known angle rules, a student proves two angles congruent. What reasoning method is used?',aliases:['Deductive Reasoning']},
     {id:'counterexample',name:'Counterexample',source:'02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf',easy:true,definition:'One specific case that makes a universal claim false.',application:'What is a single example that disproves a conjecture called?',hardApplication:'A claim says every prime number is odd. Which kind of evidence disproves it?',aliases:['Counterexample']}
   ];
-  const buildTheoremPool = (_base, mode, hardOnly = false) => {
-    const variants = [];
-    for (const item of REFERENCE_ITEMS) {
-      if (hardOnly && item.easy) continue;
-      const records = [
-        ['apply',item.application,false], ['identify-easy',item.definition,true],
-        ['identify-hard',item.definition,true], ['apply-hard',item.hardApplication,false]
-      ];
-      for (const [kind,prompt,identify] of records) {
-        const hard = kind.includes('hard');
-        const answer = item.name, id = `ref-${item.id}-${kind}`;
-        const distractorNames = REFERENCE_ITEMS.filter((candidate) => candidate.id !== item.id).map((candidate) => candidate.name);
-        const explanation = `${answer}. Source: ${item.source}. ${identify ? 'Match the complete condition in the clue to the rule.' : 'Check the given relationship and the conclusion the proof needs.'}`;
-        const options = [answer, ...distractorNames.sort((a,b) => Math.abs(a.length-answer.length)-Math.abs(b.length-answer.length)).slice(0,3)].sort((a,b) => (a.length % 7)-(b.length % 7) || a.localeCompare(b));
-        variants.push({id, mode, prompt:identify ? `${hard ? 'Type the name' : 'Which rule matches'} this description? ${prompt}` : prompt,
-          expectedDisplay:answer, options:mode === 'mcq' ? options : undefined, correctIndex:mode === 'mcq' ? options.indexOf(answer) : undefined,
-          acceptable:answerSet([answer,...item.aliases]), explanation, theoremDrill:true, theoremItemId:item.id, theoremHard:hard,
-          source:item.source, answerKind:'reference-rule'});
-      }
-    }
-    return variants;
+  const buildTheoremPool = (_base, mode, hardOnly = false, hiddenItems = {}) => {
+    const referenceByName = new Map(REFERENCE_ITEMS.map((item) => [canonicalName(item.name), item]));
+    return (window.VertexTheoremDrill || []).flatMap((rule) => {
+      if (hardOnly && !rule.hard) return [];
+      const sourceItem = referenceByName.get(canonicalName(rule.name));
+      const source = sourceItem?.source || '00_geometry-sequence_highlighted.pdf';
+      const prompts = mode === 'text' ? rule.questions.filter((question) => question.label.endsWith('A')) : rule.questions;
+      return prompts.filter((question) => !hiddenItems[question.id] && !hiddenItems[`theorem-${question.id}`]).map((question) => {
+        const correct = mode === 'mcq' ? question.options[question.correctIndex] : rule.name;
+        const relatedNote = ['Perpendicular Transversal Theorem','Parallel Lines Perpendicular to a Transversal Theorem','Perpendicular Transversal Converse'].includes(rule.name)
+          ? ' Class-list note: your study sheet lists the same-transversal parallel result under two separate names; use the exact label your teacher expects.' : '';
+        return {
+          id:question.id, mode, prompt:mode === 'text' ? `Type the rule name: ${question.prompt}` : question.prompt,
+          expectedDisplay:correct, options:mode === 'mcq' ? question.options : undefined,
+          correctIndex:mode === 'mcq' ? question.correctIndex : undefined,
+          acceptable:mode === 'text' ? answerSet([rule.name,...(sourceItem?.aliases || [])]) : answerSet([correct]),
+          explanation:`${rule.name} — ${rule.meaning}. Source: ${source}.${relatedNote}`,
+          theoremDrill:true, theoremItemId:rule.name, theoremHard:rule.hard, theoremPhase:question.label.endsWith('A') ? 'Name the rule' : 'Meaning match',
+          source, answerKind:'reference-rule'
+        };
+      });
+    });
   };
   const poolFor = (app, key) => {
     const hiddenItems = app.state?.hiddenItems || {};
     const base = (QUESTIONS[key] || []).filter((item) => !hiddenItems[item.id] && (key !== 'geometry-reference' || !hiddenItems[`theorem-${item.id}`]));
     if (key !== 'geometry-reference') return base;
     const preferences = readPreferences();
-    return buildTheoremPool(base, preferences.theoremMode === 'hard' ? 'text' : 'mcq', preferences.theoremHardOnly === true);
+    return buildTheoremPool(base, preferences.theoremMode === 'hard' ? 'text' : 'mcq', preferences.theoremHardOnly === true, hiddenItems);
   };
   const enabledKeys = (app) => MODULES.filter((module) => !module.premium || app.hasPremiumAccess?.()).map((module) => module.key);
   const PREF_COOKIE = 'vertex_geometry_preferences_v1';
@@ -255,13 +256,13 @@
     const markup = ['unit-1','unit-2','unit-3','reference'].map((unit) => {
       const label = unit === 'reference' ? 'Theorems, Definitions, Postulates & Properties' : `Unit ${unit.slice(-1)}`;
       const counts = { locked: 0, reduced: 0 };
-      const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; const kind = locked ? 'locked' : module.reduced ? 'reduced' : ''; const showBadge = kind && counts[kind] < (kind === 'locked' ? 1 : 2); if (showBadge) counts[kind] += 1; const description = locked ? 'Premium only: unlock this geometry section.' : module.reduced ? 'Free includes a smaller rotation; Premium adds the complete section.' : ''; const badge = showBadge ? `<button type="button" class="premium-badge premium-badge-${kind}" data-premium-lock="true" title="${description}" aria-label="${description}">${kind === 'locked' ? '🔒' : '◐'}</button>` : ''; const practiceNote = module.key === 'geometry-review-2' ? '<div class="module-practice-note">📝 Scratch-paper-first practice · Canvas Test 2 review problems · multiple choice with worked feedback</div>' : ''; return `<div class="toggle${locked ? ' module-locked' : ''}${module.key === 'geometry-review-2' ? ' test2-review-module' : ''}"><div><div class="label">${module.section} ${module.name} ${badge}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${QUESTIONS[module.key].length} questions${locked ? ' · Premium' : ''}</div>${practiceNote}</div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
+      const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; const kind = locked ? 'locked' : module.reduced ? 'reduced' : ''; const showBadge = kind && counts[kind] < (kind === 'locked' ? 1 : 2); if (showBadge) counts[kind] += 1; const description = locked ? 'Premium only: unlock this geometry section.' : module.reduced ? 'Free includes a smaller rotation; Premium adds the complete section.' : ''; const badge = showBadge ? `<button type="button" class="premium-badge premium-badge-${kind}" data-premium-lock="true" title="${description}" aria-label="${description}">${kind === 'locked' ? '🔒' : '◐'}</button>` : ''; const practiceNote = module.key === 'geometry-review-2' ? '<div class="module-practice-note">📝 Scratch-paper-first practice · Canvas Test 2 review problems · multiple choice with worked feedback</div>' : module.key === 'geometry-reference' ? '<div class="module-practice-note">⚡ Rapid retrieval · 41 rules, two question styles each · tap for instant feedback · missed rules return for another try</div>' : ''; const questionCount = module.key === 'geometry-reference' ? (window.VertexTheoremDrill || []).reduce((sum, rule) => sum + rule.questions.length, 0) : (QUESTIONS[module.key] || []).length; return `<div class="toggle${locked ? ' module-locked' : ''}${module.key === 'geometry-review-2' ? ' test2-review-module' : ''}"><div><div class="label">${module.section} ${module.name} ${badge}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${questionCount} questions${locked ? ' · Premium' : ''}</div>${practiceNote}</div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
       return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
     }).join('');
     section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + markup;
     const modeTools = document.createElement('div');
     modeTools.className = 'theorem-mode-tools';
-    modeTools.innerHTML = `<div class="theorem-mode-heading"><div><strong>Reference practice</strong><span>Choose how you want to review these rules.</span></div><label class="theorem-hard-toggle"><input type="checkbox" data-theorem-hard-only><span class="theorem-toggle-track" aria-hidden="true"></span><span><b>Hard questions only</b><small>Focus on proof rules and multi-step applications</small></span></label></div><div class="theorem-mode-buttons" role="group" aria-label="Answer format"><button type="button" class="btn small" data-theorem-mode="easy">Easy · multiple choice</button><button type="button" class="btn small" data-theorem-mode="hard">Hard · type the name</button></div><p class="theorem-mode-summary" aria-live="polite"></p>`;
+    modeTools.innerHTML = `<div class="theorem-mode-heading"><div><strong>Rapid-fire rule practice</strong><span>Quick recognition, then type the rule name when ready.</span></div><label class="theorem-hard-toggle"><input type="checkbox" data-theorem-hard-only><span class="theorem-toggle-track" aria-hidden="true"></span><span><b>Hard rules only</b><small>Focus on rules marked HARD in your drill</small></span></label></div><div class="theorem-mode-buttons" role="group" aria-label="Answer format"><button type="button" class="btn small" data-theorem-mode="easy">Quick · tap an answer</button><button type="button" class="btn small" data-theorem-mode="hard">Challenge · type the rule</button></div><p class="theorem-mode-summary" aria-live="polite"></p>`;
     const shareTools = document.createElement('div'); shareTools.className = 'module-share-tools';
     shareTools.innerHTML = '<button type="button" class="btn small" id="shareModulesBtn">🔗 Share selected modules</button><span id="moduleShareStatus" role="status" aria-live="polite"></span>';
     const referenceContent = section.querySelector('[data-geometry-module="geometry-reference"]')?.closest('.toggle')?.firstElementChild;
@@ -285,7 +286,7 @@
     const syncHardOnly = () => {
       const current = readPreferences();
       const count = buildTheoremPool([],current.theoremMode === 'hard' ? 'text' : 'mcq',current.theoremHardOnly === true).length;
-      modeTools.querySelector('.theorem-mode-summary').textContent = `${current.theoremHardOnly ? 'Hard rules only' : 'Complete reference'} · ${count} question prompts · source PDF named in every explanation.`;
+      modeTools.querySelector('.theorem-mode-summary').textContent = `${current.theoremHardOnly ? 'Hard rules only' : 'All 41 rules'} · ${count} prompts · rule meaning and source PDF shown after each answer.`;
     };
     hardOnly.addEventListener('change', () => {
       writePreferences({ ...readPreferences(), theoremHardOnly:hardOnly.checked }); syncHardOnly();
@@ -368,24 +369,29 @@
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && poolFor(app,key).length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
     app.getModuleCounts = (key) => ({ total:poolFor(app,key).length, available:poolFor(app,key).length });
-    app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const rotation = app.activeSession?.questionRotation; const seen = rotation?.seenByModule?.get(key); const fresh = seen?.size ? pool.filter((item) => !seen.has(String(item.id))) : pool; const due = rotation && !fresh.length ? pool.filter((item) => { const questionKey = `${key}:${item.id}`, missedAt = rotation.missedAt.get(questionKey); return missedAt != null && !rotation.retried.has(questionKey) && rotation.uniqueAnswered - missedAt >= 4; }) : []; const candidates = fresh.length ? fresh : due.length ? due : pool; const item = candidates[Math.floor(Math.random() * candidates.length)]; if (!fresh.length && due.length) rotation.retried.add(`${key}:${item.id}`); return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };
+    app.generateQuestion = (key) => { const pool = poolFor(app,key); if (!pool.length) return null; const rotation = app.activeSession?.questionRotation; const seen = rotation?.seenByModule?.get(key); const fresh = seen?.size ? pool.filter((item) => !seen.has(String(item.id))) : pool; const due = rotation && (key === 'geometry-reference' || !fresh.length) ? pool.filter((item) => { const questionKey = `${key}:${item.id}`, missedAt = rotation.missedAt.get(questionKey); return missedAt != null && !rotation.retried.has(questionKey) && rotation.uniqueAnswered - missedAt >= 4; }) : []; const candidates = due.length ? due : fresh.length ? fresh : pool; const item = candidates[Math.floor(Math.random() * candidates.length)]; return { ...item, module:key, acceptable:item.acceptable instanceof Set ? item.acceptable : answerSet([item.expectedDisplay]) }; };
     app.updateHomeSummary = () => { const node = document.getElementById('homeModuleSummary'); if (node) node.textContent = app.getEnabledModules().map((key) => byKey[key].name).join(', ') || 'No sections selected yet'; app.syncProofBuilderAvailability?.(); };
     app.getSessionTarget = () => app.hasPremiumAccess() ? 18 : 10;
     const originalRefresh = app.refreshSettingsUI.bind(app);
     app.refreshSettingsUI = (...args) => { const result = originalRefresh(...args); labels(); renderSettings(app); app.updateHomeSummary(); return result; };
-    const originalRender = app.renderQuestion.bind(app); app.renderQuestion = (question, options) => { originalRender(question, options); const title = document.getElementById('qaTitle'); if (title) title.textContent = byKey[question?.module]?.name || 'Geometry'; document.getElementById('answerInput')?.setAttribute('placeholder','Type a geometry answer...'); const prompt = document.getElementById('qaPrompt'); let coach = document.getElementById('test2ScratchCoach'); if (question?.module === 'geometry-review-2' && prompt) { if (!coach) { coach = document.createElement('aside'); coach.id = 'test2ScratchCoach'; coach.className = 'test2-scratch-coach'; coach.setAttribute('aria-label','Scratch-paper-first test practice'); coach.innerHTML = '<strong>📝 Scratch paper first</strong><span>Write the slope, equation, distance setup, or angle relationship before you choose. Then submit to check your work and read the reasoning.</span>'; prompt.before(coach); } coach.hidden = false; } else if (coach) coach.hidden = true; };
+    const originalRender = app.renderQuestion.bind(app); app.renderQuestion = (question, options) => { originalRender(question, options); const title = document.getElementById('qaTitle'); if (title) title.textContent = byKey[question?.module]?.name || 'Geometry'; document.getElementById('answerInput')?.setAttribute('placeholder','Type a geometry answer...'); const prompt = document.getElementById('qaPrompt'); let coach = document.getElementById('test2ScratchCoach'); if (question?.module === 'geometry-review-2' && prompt) { if (!coach) { coach = document.createElement('aside'); coach.id = 'test2ScratchCoach'; coach.className = 'test2-scratch-coach'; coach.setAttribute('aria-label','Scratch-paper-first test practice'); coach.innerHTML = '<strong>📝 Scratch paper first</strong><span>Write the slope, equation, distance setup, or angle relationship before you choose. Then submit to check your work and read the reasoning.</span>'; prompt.before(coach); } coach.hidden = false; } else if (coach) coach.hidden = true; let rapidCoach = document.getElementById('theoremRapidCoach'); if (question?.module === 'geometry-reference' && prompt) { if (!rapidCoach) { rapidCoach = document.createElement('aside'); rapidCoach.id = 'theoremRapidCoach'; rapidCoach.className = 'module-practice-note'; rapidCoach.setAttribute('aria-live','polite'); prompt.before(rapidCoach); } const seen = app.activeSession?.questionRotation?.seenByModule?.get('geometry-reference'); const count = poolFor(app,'geometry-reference').length; rapidCoach.textContent = `⚡ Rapid fire · Prompt ${Math.min(count, (seen?.size || 0) + 1)} of ${count} · ${question.theoremPhase || 'Name the rule'} · ${question.mode === 'mcq' ? 'tap an answer for instant feedback.' : 'type the rule name, then submit.'}`; rapidCoach.hidden = false; if (question.mode === 'mcq') { app.setFeedback('Tap an option for instant feedback.','neutral'); document.querySelectorAll('#mcqList input[type="radio"]').forEach((input) => input.addEventListener('change', () => { if (app.currentQuestion === question && !app.answered) app.submitAnswer(); }, { once:true })); } } else if (rapidCoach) rapidCoach.hidden = true; };
     window.VertexMathAnswer = { normalize:normalizeAnswer, answerSet }; installMathKeyboard(); installProofBuilder(app); renderSettings(app); app.updateHomeSummary();
     app.runAutomatedChecks = () => {
       const results = MODULES.map((module) => ({ok:(QUESTIONS[module.key]||[]).length>=6,label:`${module.name} has a varied question bank`}));
       results.push({ok:MODULES.every((module)=>module.sources.length>0),label:'All modules retain PDF source references'});
       results.push({ok:MODULES.every((module)=>(QUESTIONS[module.key]||[]).some((question)=>question.mode==='mcq')),label:'Every geometry section offers an appropriate multiple-choice check'});
-      const reference=QUESTIONS['geometry-reference']||[], easy=buildTheoremPool(reference,'mcq'), hard=buildTheoremPool(reference,'text'), hardOnly=buildTheoremPool(reference,'text',true), grouped=new Map();
+      const reference=QUESTIONS['geometry-reference']||[], drillRules=window.VertexTheoremDrill||[], easy=buildTheoremPool(reference,'mcq'), hard=buildTheoremPool(reference,'text'), hardOnly=buildTheoremPool(reference,'mcq',true), grouped=new Map();
       easy.forEach((question)=>grouped.set(question.theoremItemId,(grouped.get(question.theoremItemId)||[]).concat(question)));
-      results.push({ok:REFERENCE_ITEMS.length>=40&&grouped.size===REFERENCE_ITEMS.length&&[...grouped.values()].every((items)=>items.length===4),label:'Reference catalog generates exactly four prompts for every rule'});
-      results.push({ok:easy.length===REFERENCE_ITEMS.length*4&&easy.every((q)=>q.mode==='mcq'&&q.options?.length===4&&new Set(q.options.map(canonicalName)).size===4&&q.options[q.correctIndex]===q.expectedDisplay),label:'Easy mode provides four-choice questions with unique, keyed answers'});
-      results.push({ok:hard.length===REFERENCE_ITEMS.length*4&&hard.every((q)=>q.mode==='text'&&!q.options),label:'Hard mode requires typed answers for all four question types'});
-      results.push({ok:hardOnly.length===REFERENCE_ITEMS.filter((item)=>!item.easy).length*4&&hardOnly.length>=REFERENCE_ITEMS.length*2&&hardOnly.every((q)=>!REFERENCE_ITEMS.find((item)=>item.id===q.theoremItemId)?.easy),label:'Hard-only retains 38 proof/application-focused rules and filters 8 foundational definitions'});
-      results.push({ok:REFERENCE_ITEMS.every((item)=>item.source&&MODULES.find((m)=>m.key==='geometry-reference').sources.includes(item.source)),label:'Every catalog item names one of the reference PDFs'});
+      results.push({ok:drillRules.length===41&&easy.length===82&&grouped.size===41&&[...grouped.values()].every((items)=>items.length===2),label:'Reference drill contains both supplied prompts for each of 41 rules'});
+      results.push({ok:easy.every((q)=>q.mode==='mcq'&&q.options?.length===4&&new Set(q.options).size===4&&q.options[q.correctIndex]===q.expectedDisplay),label:'Quick mode uses the supplied four-choice variants with keyed answers'});
+      results.push({ok:hard.length===41&&hard.every((q)=>q.mode==='text'&&!q.options&&q.expectedDisplay===q.theoremItemId),label:'Challenge mode asks all 41 name-the-rule prompts as typed recall'});
+      results.push({ok:hardOnly.length===drillRules.filter((rule)=>rule.hard).length*2&&hardOnly.every((q)=>drillRules.find((rule)=>rule.name===q.theoremItemId)?.hard),label:'Hard-only filters to the rules marked HARD in the supplied drill'});
+      results.push({ok:drillRules.every((rule)=>REFERENCE_ITEMS.some((item)=>canonicalName(item.name)===canonicalName(rule.name))&&MODULES.find((m)=>m.key==='geometry-reference').sources.includes(REFERENCE_ITEMS.find((item)=>canonicalName(item.name)===canonicalName(rule.name))?.source)),label:'Every supplied rule maps to an existing source PDF'});
+      results.push({ok:easy.every((q)=>q.explanation.includes(q.theoremItemId)&&q.explanation.includes('Source:')),label:'Every rapid-fire answer explains the rule and names its source'});
+      const retryPool=poolFor(app,'geometry-reference'), retryProbe=retryPool[0], leaveFresh=retryPool[1], savedSession=app.activeSession, seenIds=new Set(retryPool.map((q)=>String(q.id))); seenIds.delete(String(leaveFresh.id));
+      app.activeSession={questionRotation:{seenByModule:new Map([['geometry-reference',seenIds]]),missedAt:new Map([[`geometry-reference:${retryProbe.id}`,0]]),retried:new Set(),uniqueAnswered:4}};
+      const spacedRetry=app.generateQuestion('geometry-reference'); app.activeSession=savedSession;
+      results.push({ok:spacedRetry?.id===retryProbe.id,label:'Missed rules return after four new answers, before the whole deck is finished'});
       results.push({ok:REFERENCE_ITEMS.filter((item)=>item.easy).every((item)=>![item.name,item.name.replace(/^Definition of /,'')].some((term)=>item.definition.toLowerCase().includes(term.toLowerCase()))),label:'Basic identification clues omit the rule name'});
       const test2=QUESTIONS['geometry-review-2']||[];
       results.push({ok:test2.length>=25&&test2.every((q)=>q.mode==='mcq'&&q.options?.length===4&&new Set(q.options).size===4&&q.correctIndex>=0&&q.correctIndex<4&&q.explanation),label:'Test 2 review has varied four-choice questions with worked feedback'});
