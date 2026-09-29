@@ -399,16 +399,21 @@
       return {pass:results.filter((item)=>item.ok).length,total:results.length,results};
     };
     if (sharedSelection && requestedModuleKeys.length) {
-      const premiumSelection = requestedModuleKeys.some((key) => byKey[key].premium);
+      const lockedSelection = requestedModuleKeys.filter((key) => byKey[key].premium && !app.hasPremiumAccess?.());
+      const availableSelection = requestedModuleKeys.filter((key) => !byKey[key].premium || app.hasPremiumAccess?.());
       const status = document.getElementById('moduleShareStatus') || ensureShareStatus();
-      if (premiumSelection && !app.hasPremiumAccess?.()) {
-        app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, requestedModuleKeys.includes(module.key)]));
-        writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); renderSettings(app);
-        status.textContent = 'This link includes Premium modules. Unlock Premium to practice those selected modules.';
+      app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, requestedModuleKeys.includes(module.key)]));
+      writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); renderSettings(app); app.updateHomeSummary();
+      const enabledSelection = app.getEnabledModules().filter((key) => availableSelection.includes(key));
+      if (enabledSelection.length) {
+        if (lockedSelection.length) status.textContent = `Practice opened for available modules. Unlock Premium to add: ${lockedSelection.map((key) => byKey[key].name).join(', ')}.`;
+        app.enterPractice();
+      } else if (lockedSelection.length) {
+        status.textContent = 'This shared link opens a Premium module. Unlock Premium to start this practice session.';
+        app.openPremiumAccess?.();
       } else {
-        app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, requestedModuleKeys.includes(module.key)]));
-        writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); renderSettings(app); app.updateHomeSummary();
-        if (app.getEnabledModules().length) app.enterPractice();
+        status.textContent = 'This shared link has no available modules. Open Settings and choose at least one module.';
+        app.openSettings?.();
       }
     }
     app.refreshSettingsUI();
