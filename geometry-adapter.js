@@ -9,15 +9,15 @@
     { key:'geometry-1-3', unit:'unit-1', section:'1.3', name:'Midpoint and Distance Formula', sources:['01-03_midpoint-and-distance-formula_annotated.pdf'], premium:false },
     { key:'geometry-1-5', unit:'unit-1', section:'1.5', name:'Measuring and Constructing Angles', sources:['01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf'], premium:false },
     { key:'geometry-1-6', unit:'unit-1', section:'1.6', name:'Pairs of Angles', sources:['01-06_pairs-of-angles_annotated.pdf'], premium:false },
-    { key:'geometry-review', unit:'unit-1', section:'1.99', name:'Test 1 Review', sources:['01-99_review-for-test-1_answers.pdf'], premium:true },
+    { key:'geometry-review', unit:'unit-1', section:'1.99', name:'Test 1 Review', sources:['01-99_review-for-test-1_answers.pdf'], premium:'half' },
     { key:'geometry-2-2', unit:'unit-2', section:'2.2', name:'Inductive and Deductive Reasoning', sources:['02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf'], premium:false },
     { key:'geometry-2-4', unit:'unit-2', section:'2.4', name:'Algebraic Reasoning', sources:['02-04_algebraic-reasoning_annotated.pdf'], premium:false },
     { key:'geometry-2-5', unit:'unit-2', section:'2.5', name:'Proving Statements about Segments and Angles', sources:['02-05_proving-segments-and-angles_annotated.pdf'], premium:false },
     { key:'geometry-2-6', unit:'unit-2', section:'2.6', name:'Proving Geometric Relationships', sources:['02-06_proving-geometric-relationships_annotated.pdf'], premium:false },
     { key:'geometry-3-1', unit:'unit-3', section:'3.1', name:'Pairs of Lines and Angles', sources:['03-01_pairs-of-lines-and-angles_blank.pdf'], premium:false },
-    { key:'geometry-3-2', unit:'unit-3', section:'3.2', name:'Parallel Lines and Transversals', sources:['03-02_parallel-lines-and-transversals_annotated.pdf'], premium:false, reduced:true },
-    { key:'geometry-3-3', unit:'unit-3', section:'3.3', name:'Proofs with Parallel Lines', sources:['03-03_proofs-with-parallel-lines_annotated.pdf'], premium:true },
-    { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:true },
+    { key:'geometry-3-2', unit:'unit-3', section:'3.2', name:'Parallel Lines and Transversals', sources:['03-02_parallel-lines-and-transversals_annotated.pdf'], premium:'half' },
+    { key:'geometry-3-3', unit:'unit-3', section:'3.3', name:'Proofs with Parallel Lines', sources:['03-03_proofs-with-parallel-lines_annotated.pdf'], premium:'half' },
+    { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:'half' },
     { key:'geometry-3-5', unit:'unit-3', section:'3.5', name:'Equations of Parallel and Perpendicular Lines', sources:['3.5 Equations of Parallel and Perpendicular Lines.pdf','3.5 Equations of Parallel and Perpendicular Lines - annotated-1.pdf'], premium:false },
     { key:'geometry-review-2', unit:'unit-3', section:'3.99', name:'Test 2 Review', sources:['03-99_review-for-test-2_answers.pdf'], premium:false },
     { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:false },
@@ -221,12 +221,13 @@
   };
   const poolFor = (app, key) => {
     const hiddenItems = app.state?.hiddenItems || {};
-    const base = (QUESTIONS[key] || []).filter((item) => !hiddenItems[item.id] && (key !== 'geometry-reference' || !hiddenItems[`theorem-${item.id}`]));
+    const module = byKey[key];
+    const base = (QUESTIONS[key] || []).map((item, index) => ({ ...item, premium:module?.premium === 'half' && index % 2 === 1 })).filter((item) => !hiddenItems[item.id] && (key !== 'geometry-reference' || !hiddenItems[`theorem-${item.id}`]));
     if (key !== 'geometry-reference') return base;
     const preferences = readPreferences();
     return buildTheoremPool(base, preferences.theoremMode === 'hard' ? 'text' : 'mcq', preferences.theoremHardOnly === true, hiddenItems);
   };
-  const enabledKeys = (app) => MODULES.filter((module) => !module.premium || app.hasPremiumAccess?.()).map((module) => module.key);
+  const enabledKeys = (app) => MODULES.filter((module) => module.premium !== true || app.hasPremiumAccess?.()).map((module) => module.key);
   const PREF_COOKIE = 'vertex_geometry_preferences_v1';
   const readPreferences = () => {
     try { const raw = document.cookie.split('; ').find((part) => part.startsWith(`${PREF_COOKIE}=`)); return raw ? JSON.parse(decodeURIComponent(raw.slice(PREF_COOKIE.length + 1))) : {}; } catch (_) { return {}; }
@@ -255,8 +256,15 @@
     const unlocked = !!app.hasPremiumAccess?.(); const preferences = readPreferences(); const saved = app.state?.geometryModules || preferences.modules || {};
     const markup = ['unit-1','unit-2','unit-3','reference'].map((unit) => {
       const label = unit === 'reference' ? 'Theorems, Definitions, Postulates & Properties' : `Unit ${unit.slice(-1)}`;
-      const counts = { locked: 0, reduced: 0 };
-      const cards = MODULES.filter((module) => module.unit === unit).map((module) => { const locked = module.premium && !unlocked; const kind = locked ? 'locked' : module.reduced ? 'reduced' : ''; const showBadge = kind && counts[kind] < (kind === 'locked' ? 1 : 2); if (showBadge) counts[kind] += 1; const description = locked ? 'Premium only: unlock this geometry section.' : module.reduced ? 'Free includes a smaller rotation; Premium adds the complete section.' : ''; const badge = showBadge ? `<button type="button" class="premium-badge premium-badge-${kind}" data-premium-lock="true" title="${description}" aria-label="${description}">${kind === 'locked' ? '🔒' : '◐'}</button>` : ''; const practiceNote = module.key === 'geometry-review-2' ? '<div class="module-practice-note">📝 Scratch-paper-first practice · Canvas Test 2 review problems · multiple choice with worked feedback</div>' : module.key === 'geometry-reference' ? '<div class="module-practice-note">⚡ Rapid retrieval · 41 rules, two question styles each · tap for instant feedback · missed rules return for another try</div>' : ''; const questionCount = module.key === 'geometry-reference' ? (window.VertexTheoremDrill || []).reduce((sum, rule) => sum + rule.questions.length, 0) : (QUESTIONS[module.key] || []).length; return `<div class="toggle${locked ? ' module-locked' : ''}${module.key === 'geometry-review-2' ? ' test2-review-module' : ''}"><div><div class="label">${module.section} ${module.name} ${badge}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${questionCount} questions${locked ? ' · Premium' : ''}</div>${practiceNote}</div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`; }).join('');
+      const cards = MODULES.filter((module) => module.unit === unit).map((module) => {
+        const locked = module.premium === true && !unlocked;
+        const questionCount = module.key === 'geometry-reference' ? (window.VertexTheoremDrill || []).reduce((sum, rule) => sum + rule.questions.length, 0) : (QUESTIONS[module.key] || []).length;
+        const premiumCount = module.premium === 'half' ? Math.floor(questionCount / 2) : 0;
+        const detail = locked ? `${questionCount} questions · Premium access required` : premiumCount ? `${questionCount} questions · ${questionCount - premiumCount} free + ${premiumCount} Premium` : `${questionCount} questions`;
+        const badge = locked ? '<span class="premium-module-tag" aria-label="Premium module">✦ Premium module</span>' : premiumCount ? `<span class="premium-module-tag" aria-label="${premiumCount} questions require Premium access">◐ ${premiumCount} Premium questions</span>` : '';
+        const practiceNote = module.key === 'geometry-review-2' ? '<div class="module-practice-note">📝 Scratch-paper-first practice · Canvas Test 2 review problems · multiple choice with worked feedback</div>' : module.key === 'geometry-reference' ? '<div class="module-practice-note">⚡ Rapid retrieval · 41 rules, two question styles each · tap for instant feedback · missed rules return for another try</div>' : '';
+        return `<div class="toggle${locked ? ' module-locked' : ''}${module.key === 'geometry-review-2' ? ' test2-review-module' : ''}"><div><div class="label">${module.section} ${module.name} ${badge}</div><div class="desc">${module.sources.length} source PDF${module.sources.length === 1 ? '' : 's'} · ${detail}</div>${practiceNote}</div><label><input type="checkbox" data-geometry-module="${module.key}" aria-label="Toggle ${module.name} module" ${saved[module.key] === true ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch" aria-hidden="true"></span></label></div>`;
+      }).join('');
       return `<details class="module-group"${preferences.groups?.[unit] === true ? ' open' : ''}><summary>${label}</summary><div class="module-group-content">${cards}</div></details>`;
     }).join('');
     section.innerHTML = '<summary class="settings-section-summary">Geometry modules</summary>' + markup;
@@ -377,14 +385,14 @@
     if (params.has('shuffle')) writePreferences({ ...readPreferences(), shuffleQuestionOrder:params.get('shuffle') !== '0' });
     app.getEnabledModules = () => enabledKeys(app).filter((key) => app.state?.geometryModules?.[key] === true && poolFor(app,key).length);
     app.isModulePracticeEnabled = (key) => app.getEnabledModules().includes(key);
-    app.getModuleCounts = (key) => ({ total:poolFor(app,key).length, available:poolFor(app,key).length });
+    app.getModuleCounts = (key) => { const pool = poolFor(app,key); return { total:pool.length, available:pool.filter((item) => !item.premium || app.hasPremiumAccess?.()).length }; };
     const createQuestionOrder = (ids,shuffle,random=Math.random) => {
       const order=[...ids];
       if (shuffle) for (let i=order.length-1;i>0;i--) { const j=Math.floor(random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
       return order;
     };
     app.generateQuestion = (key) => {
-      const pool = poolFor(app,key); if (!pool.length) return null;
+      const pool = poolFor(app,key).filter((item) => !item.premium || app.hasPremiumAccess?.()); if (!pool.length) return null;
       const rotation = app.activeSession?.questionRotation;
       const seen = rotation?.seenByModule?.get(key);
       const fresh = seen?.size ? pool.filter((item) => !seen.has(String(item.id))) : pool;
@@ -423,6 +431,21 @@
     window.VertexMathAnswer = { normalize:normalizeAnswer, answerSet }; installMathKeyboard(); installProofBuilder(app); renderSettings(app); app.updateHomeSummary();
     app.runAutomatedChecks = () => {
       const results = MODULES.map((module) => ({ok:(QUESTIONS[module.key]||[]).length>=6,label:`${module.name} has a varied question bank`}));
+      const splitModules = MODULES.filter((module) => module.premium === 'half');
+      const originalPremiumCheck = app.hasPremiumAccess;
+      const allSplitPools = splitModules.map((module) => poolFor(app, module.key));
+      const expectedFreeCounts = allSplitPools.map((pool) => pool.filter((item) => !item.premium).length);
+      const balancedBanks = splitModules.every((module) => {
+        const source = QUESTIONS[module.key] || [];
+        return source.length >= 6 && source.filter((_, index) => index % 2 === 1).length === Math.floor(source.length / 2);
+      });
+      app.hasPremiumAccess = () => false;
+      const freeSplits = splitModules.map((module) => app.getModuleCounts(module.key));
+      app.hasPremiumAccess = () => true;
+      const unlockedSplits = splitModules.map((module) => app.getModuleCounts(module.key));
+      app.hasPremiumAccess = originalPremiumCheck;
+      results.push({ok:splitModules.length===4&&balancedBanks&&freeSplits.every((counts,index)=>counts.total===allSplitPools[index].length&&counts.available===expectedFreeCounts[index]&&unlockedSplits[index].available===counts.total),label:'Premium-marked geometry modules keep a balanced free half and unlock the full bank'});
+      results.push({ok:document.querySelectorAll('.premium-module-tag').length>=4&&!document.querySelector('.premium-badge-locked'),label:'Geometry modules use consistent question-count Premium badges without padlock marks'});
       results.push({ok:MODULES.every((module)=>module.sources.length>0),label:'All modules retain PDF source references'});
       results.push({ok:MODULES.every((module)=>(QUESTIONS[module.key]||[]).some((question)=>question.mode==='mcq')),label:'Every geometry section offers an appropriate multiple-choice check'});
       const reference=QUESTIONS['geometry-reference']||[], drillRules=window.VertexTheoremDrill||[], easy=buildTheoremPool(reference,'mcq'), hard=buildTheoremPool(reference,'text'), hardOnly=buildTheoremPool(reference,'mcq',true), grouped=new Map();
@@ -453,8 +476,8 @@
       return {pass:results.filter((item)=>item.ok).length,total:results.length,results};
     };
     if (sharedSelection && requestedModuleKeys.length) {
-      const lockedSelection = requestedModuleKeys.filter((key) => byKey[key].premium && !app.hasPremiumAccess?.());
-      const availableSelection = requestedModuleKeys.filter((key) => !byKey[key].premium || app.hasPremiumAccess?.());
+      const lockedSelection = requestedModuleKeys.filter((key) => byKey[key].premium === true && !app.hasPremiumAccess?.());
+      const availableSelection = requestedModuleKeys.filter((key) => byKey[key].premium !== true || app.hasPremiumAccess?.());
       const status = document.getElementById('moduleShareStatus') || ensureShareStatus();
       app.state.geometryModules = Object.fromEntries(MODULES.map((module) => [module.key, requestedModuleKeys.includes(module.key)]));
       writePreferences({ ...readPreferences(), modules:app.state.geometryModules }); renderSettings(app); app.updateHomeSummary();

@@ -27,3 +27,7 @@ Add records to `MODULES` in `app.js` with a dashboard key, title, description, m
 ## Feedback delivery
 
 The feedback form supports general feedback, module requests, and feedback about the feedback experience. It intentionally does not submit anywhere until a server-owned `VERTEX_FEEDBACK_URL` or equivalent endpoint is selected and implemented; no feedback is silently discarded.
+
+## Premium question tiers
+
+Spanish practice modules with Premium extensions show the exact free and Premium question counts in Settings. A half-circle indicates a stable alternating split that leaves half the bank free; all Premium questions become available after access is active. Geometry sections that were previously locked or shown as reduced rotations now use the same half-free split and question-count label.

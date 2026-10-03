@@ -2,6 +2,7 @@
 :root{--brand:#166534;--brand-strong:#14532d;--brand-soft:#f1faf3;--primary:#166534;--primary-2:#14532d;--focus:#86efac;--keyhint-bg:#f1faf3;--keyhint-border:#bbf7d0;--bg:#f5faf6}
 body{background:radial-gradient(1200px 600px at 20% 0%,#ecfdf5 0%,transparent 60%),radial-gradient(1200px 600px at 80% 20%,#f0fdf4 0%,transparent 55%),var(--bg)}
 a{color:var(--brand)}
+.premium-module-tag{display:inline-flex;align-items:center;gap:4px;margin-left:7px;padding:3px 8px;border:1px solid #bbf7d0;border-radius:999px;background:#f1faf3;color:#14532d;font-size:.68rem;font-weight:800;line-height:1.25;vertical-align:middle}.module-access-summary{margin-top:3px;color:var(--muted,#64748b);font-size:.76rem;line-height:1.35}
 .app-switcher-menu>a:hover,.app-switcher-menu>a.is-current{background:var(--brand-soft)}
 .app-switcher-menu em,.feedback-fab,.dashboard-switcher-button,#premiumBtn,#settingsBtn{color:var(--brand-strong)}
 .dashboard-switcher-button{background:var(--brand-soft)}

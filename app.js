@@ -156,7 +156,8 @@
     'commands', 'vocab', 'reflexive', 'tenses', 'prices', 'weather', 'clothing',
     'foods', 'present_progressive', 'ser_estar', 'gustar', 'dates',
     'summer_preterite', 'summer_imperfect', 'summer_irregular_preterite',
-    'summer_irregular_imperfect', 'summer_tense_choice', 'summer_translations'
+    'summer_irregular_imperfect', 'summer_tense_choice', 'summer_translations',
+    'honors_ordinal_numbers', 'honors_test1_review'
   ]);
 
   function readPremiumAccessRecord() {
@@ -189,13 +190,7 @@
     try { document.cookie = `${PREMIUM_ACCESS_COOKIE_KEY}=; max-age=0; path=/; SameSite=Lax`; } catch (_) {}
   }
 
-  function premiumQuestionHash(id) {
-    return String(id || '').split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  }
-
-  function isPremiumQuestion(moduleKey, questionId) {
-    return PREMIUM_COMPLEX_MODULES.has(moduleKey) && premiumQuestionHash(questionId) % 4 === 0;
-  }
+  const PREMIUM_QUESTION_IDS = new Map();
   const MAYO_MADNESS_SUBMODULE_KEYS = [
     'mayo_madness_1',
     'mayo_madness_2',
@@ -3607,8 +3602,7 @@ mean/nice
   }
 
   function generateOrdinalQuestion(app) {
-    const freeLimit = 12; // compact free rotation; premium sees the complete variety
-    const pool = app.hasPremiumAccess() ? ORDINAL_POOL : ORDINAL_POOL.slice(0, freeLimit);
+    const pool = ORDINAL_POOL;
     const item = chooseHonorsItem(app, 'honors_ordinal_numbers', pool, 5);
     if (!item) return null;
     return { module: 'honors_ordinal_numbers', id: item.id, mode: 'text', prompt: item.prompt, expectedDisplay: item.expectedDisplay, acceptable: buildAcceptableAnswerSet(item.acceptable), explanation: item.explanation || 'Ordinal numbers agree with the noun they describe.' };
@@ -3627,11 +3621,11 @@ mean/nice
     const section = pickRandom(open.length ? open : sections);
     let q;
     if (section === 'vocabulary') {
-      const item = chooseHonorsItem(app, 'honors_test1_review', HONORS_TIME_WORDS.slice(0, app.hasPremiumAccess() ? HONORS_TIME_WORDS.length : 12), 5);
+      const item = chooseHonorsItem(app, 'honors_test1_review', HONORS_TIME_WORDS, 5);
       if (!item) return null;
       q = { id: item.id, prompt: `Translate into Spanish: <strong>“${escapeHtml(item.en[0])}”</strong>`, expectedDisplay: item.sp, acceptable: [item.sp], explanation: 'Write the Spanish time expression. Accents are optional for correctness.' };
     } else if (section === 'translation') {
-      const sourcePool = app.hasPremiumAccess() ? HONORS_PRETERITE_POOL.concat(HONORS_IMPERFECT_POOL) : HONORS_PRETERITE_POOL.slice(0, 30).concat(HONORS_IMPERFECT_POOL.slice(0, 30));
+      const sourcePool = HONORS_PRETERITE_POOL.concat(HONORS_IMPERFECT_POOL);
       const item = chooseHonorsItem(app, 'honors_test1_review', sourcePool, 5);
       if (!item) return null;
       const form = honorsRegularConjugate(item.verb, item.tense, item.person);
@@ -4526,6 +4520,7 @@ mean/nice
         if (!el) continue;
         el.checked = !!this.state.settings.modulesEnabled[m.key];
       }
+      this.updatePremiumModuleLabels();
       if (this.$.toggle_mayo_madness) this.$.toggle_mayo_madness.checked = !!(this.hasPremiumAccess() && this.state.settings.mayoMadnessEnabled);
 
       // Tense toggles
@@ -4705,7 +4700,6 @@ mean/nice
     isModulePracticeEnabled(moduleKey) {
       if (moduleKey === MAYO_MADNESS_KEY) return this.getEnabledMayoMadnessModules().length > 0;
       if (!this.state.settings.modulesEnabled[moduleKey]) return false;
-      if (moduleKey === 'honors_test1_review' && !this.hasPremiumAccess()) return false;
       if (!isMayoMadnessKey(moduleKey)) return true;
       return !!(this.hasPremiumAccess() && this.state.settings.mayoMadnessEnabled);
     },
@@ -4781,7 +4775,57 @@ mean/nice
     },
 
     isQuestionAvailableWithoutPremium(question) {
-      return !question || !isPremiumQuestion(question.module, question.id) || this.hasPremiumAccess();
+      if (!question || !PREMIUM_COMPLEX_MODULES.has(question.module)) return true;
+      return this.hasPremiumAccess() || !this.getPremiumQuestionIds(question.module).has(String(question.id));
+    },
+
+    getPremiumQuestionPool(moduleKey) {
+      const pools = {
+        commands: this.commandPool, vocab: this.vocab, reflexive: this.reflexivePool, tenses: this.tensesPool,
+        days: DAYS_POOL, months: MONTHS_POOL, seasons: SEASONS_POOL, time: TIME_POOL, colors: COLORS_POOL,
+        prices: PRICES_POOL, weather: WEATHER_POOL, clothing: CLOTHING_POOL, foods: FOODS_POOL,
+        present_progressive: PRESENT_PROGRESSIVE_POOL, ser_estar: SER_ESTAR_POOL, gustar: GUSTAR_POOL, dates: DATES_POOL,
+        summer_preterite: SUMMER_PRETERITE_POOL, summer_imperfect: SUMMER_IMPERFECT_POOL,
+        summer_irregular_preterite: SUMMER_IRREGULAR_PRETERITE_POOL, summer_irregular_imperfect: SUMMER_IRREGULAR_IMPERFECT_POOL,
+        summer_tense_choice: SUMMER_TENSE_CHOICE_POOL, summer_translations: SUMMER_TRANSLATIONS_POOL,
+        honors_ordinal_numbers: ORDINAL_POOL,
+        honors_test1_review: HONORS_PRETERITE_POOL.concat(HONORS_IMPERFECT_POOL, HONORS_TIME_WORDS, HONORS_CHOICE_POOL,
+          HONORS_PRETERITE_POOL.concat(HONORS_IMPERFECT_POOL).map((item) => ({ id: `honors-translation-${item.id}` })))
+      };
+      const pool = pools[moduleKey] || [];
+      return [...new Map(pool.filter((item) => item?.id != null).map((item) => [String(item.id), item])).values()];
+    },
+
+    getPremiumQuestionIds(moduleKey) {
+      if (!PREMIUM_QUESTION_IDS.has(moduleKey)) {
+        const ids = [...new Set(this.getPremiumQuestionPool(moduleKey).map((item) => String(item.id)).filter(Boolean))];
+        PREMIUM_QUESTION_IDS.set(moduleKey, new Set(ids.filter((_, index) => index % 2 === 1)));
+      }
+      return PREMIUM_QUESTION_IDS.get(moduleKey);
+    },
+
+    getPremiumQuestionCount(moduleKey) {
+      return this.getPremiumQuestionIds(moduleKey).size;
+    },
+
+    updatePremiumModuleLabels() {
+      for (const module of MODULES) {
+        if (!PREMIUM_COMPLEX_MODULES.has(module.key)) continue;
+        const toggle = this.$['toggle_' + module.key];
+        const row = toggle?.closest('.toggle');
+        const label = row?.querySelector('.label');
+        if (!row || !label) continue;
+        const total = this.getPremiumQuestionPool(module.key).length;
+        const premium = this.getPremiumQuestionCount(module.key);
+        if (!premium) continue;
+        let badge = label.querySelector('.premium-module-tag');
+        if (!badge) { badge = document.createElement('span'); badge.className = 'premium-module-tag'; label.append(' ', badge); }
+        badge.textContent = `◐ ${premium} Premium questions`;
+        badge.setAttribute('aria-label', `Half-premium module. ${premium} Premium questions.`);
+        let summary = row.querySelector('.module-access-summary');
+        if (!summary) { summary = document.createElement('div'); summary.className = 'module-access-summary'; row.querySelector('.desc')?.after(summary); }
+        if (summary) summary.textContent = `${total} questions · ${total - premium} free + ${premium} Premium`;
+      }
     },
 
     openPremiumAccess() {
@@ -6807,8 +6851,9 @@ mean/nice
       const requiredModules = ['days', 'months', 'seasons', 'time', 'colors', 'mayo_madness_1', 'mayo_madness_2', 'rapid_translations_2', 'rapid_regular_verbs', 'rapid_irregular_verbs', 'mayo_madness_3_rapid_translations', 'prices', 'weather', 'clothing', 'foods', 'present_progressive', 'ser_estar', 'gustar', 'dates', 'honors_ordinal_numbers', 'honors_test1_review'];
       const hasModules = requiredModules.every((key) => MODULES.some((m) => m.key === key) && modules[key]);
       results.push({ ok: hasModules, label: 'Expanded modules registered (including Mayo Madness parent submodules)' });
+      results.push({ ok: [...PREMIUM_COMPLEX_MODULES].every((key) => this.getPremiumQuestionPool(key).length >= 2 && this.getPremiumQuestionCount(key) === Math.floor(this.getPremiumQuestionPool(key).length / 2)), label: 'Every partially Premium module has an exact stable half-pool split' });
       results.push({ ok: MODULES.find((m) => m.key === 'honors_ordinal_numbers')?.level === 2 && MODULES.find((m) => m.key === 'honors_test1_review')?.level === 2, label: 'Spanish 2 Honors modules are level 2 only' });
-      results.push({ ok: !PREMIUM_COMPLEX_MODULES.has('honors_ordinal_numbers') && !PREMIUM_COMPLEX_MODULES.has('honors_test1_review'), label: 'Spanish 2 Honors modules are not premium-locked' });
+      results.push({ ok: PREMIUM_COMPLEX_MODULES.has('honors_ordinal_numbers') && PREMIUM_COMPLEX_MODULES.has('honors_test1_review') && this.getPremiumQuestionCount('honors_ordinal_numbers') === Math.floor(ORDINAL_POOL.length / 2) && this.getPremiumQuestionCount('honors_test1_review') > 0, label: 'Spanish 2 Honors modules have balanced free and Premium question tiers' });
       const ordinalAnswers = buildAcceptableAnswerSet(['tercera']);
       results.push({ ok: ordinalAnswers.has(normalizeLoose('TERCERA')) && buildAcceptableAnswerSet(['tercer']).has(normalizeLoose('tercer')) && !buildAcceptableAnswerSet(['tercera']).has(normalizeLoose('tercero')), label: 'Ordinal gender agreement and contextual tercero/tercer forms are strict' });
       results.push({ ok: honorsRegularConjugate('hablar', 'preterite', '1s') === 'hablé' && honorsRegularConjugate('comer', 'imperfect', '1p') === 'comíamos' && honorsRegularConjugate('vivir', 'imperfect', '2p') === 'vivíais', label: 'Honors regular preterite/imperfect endings cover all six persons' });
