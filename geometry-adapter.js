@@ -4,7 +4,7 @@
   window.LearningAppShared?.registerUpdate({id:'vertex-theorem-review-modes-20260927-2',app:'vertex',title:'Get ready for Monday or Tuesday tests: theorem practice',copy:'Review theorem, postulate, definition, and property names in the Geometry reference module. Start with Easy multiple choice, then switch to Hard typing when you’re ready.',action:'vertex-theorems'});
   window.LearningAppShared?.registerUpdate({id:'vertex-test2-review-scratchpaper-20260927',app:'vertex',title:'Test 2 practice from your Canvas review',copy:'Get ready for the Chapter 3 test with scratch-paper-first practice based on the Canvas review: line equations, distance, angle pairs, and proof reasoning. Solve each problem on paper, then choose your answer.',action:'vertex-test2-review'});
   const transformationNoticeId = 'vertex-coordinate-transformations-20261011';
-  window.LearningAppShared?.registerUpdate({id:transformationNoticeId,app:'vertex',title:'New: coordinate transformations practice',copy:'Memorize reflections across the axes and diagonal lines, plus 90°, 180°, and 270° rotations. Practice with multiple choice first or type each coordinate rule.'});
+  window.LearningAppShared?.registerUpdate({id:transformationNoticeId,app:'vertex',title:'New: rotations and reflections practice',copy:'Memorize coordinate rules for rotations and reflections. Practice with multiple choice first or type each coordinate rule.'});
 
   const MODULES = [
     { key:'geometry-1-1', unit:'unit-1', section:'1.1', name:'Points, Lines, and Planes', sources:['01-01_points-lines-planes_annotated.pdf'], premium:false },
@@ -22,7 +22,7 @@
     { key:'geometry-3-4', unit:'unit-3', section:'3.4', name:'Proofs with Perpendicular Lines', sources:['03-04_proofs-with-perpendicular-lines_annotated.pdf'], premium:'half' },
     { key:'geometry-3-5', unit:'unit-3', section:'3.5', name:'Equations of Parallel and Perpendicular Lines', sources:['3.5 Equations of Parallel and Perpendicular Lines.pdf','3.5 Equations of Parallel and Perpendicular Lines - annotated-1.pdf'], premium:false },
     { key:'geometry-review-2', unit:'unit-3', section:'3.99', name:'Test 2 Review', sources:['03-99_review-for-test-2_answers.pdf'], premium:false },
-    { key:'geometry-transformations', unit:'unit-4', section:'4.1', name:'Coordinate Reflections and Rotations', sources:['Teacher-provided coordinate plane transformation rules'], premium:false },
+    { key:'geometry-transformations', unit:'unit-4', section:'4', name:'Rotations & Reflections Rules Practice', sources:['Teacher-provided coordinate plane transformation rules'], premium:false },
     { key:'geometry-reference', unit:'reference', section:'Reference', name:'Theorems, Definitions, Postulates & Properties', sources:['00_geometry-sequence_highlighted.pdf','01-01_points-lines-planes_annotated.pdf','01-03_midpoint-and-distance-formula_annotated.pdf','01-05_measuring-angles_annotated.pdf','01-05_more-measuring-angles_annotated.pdf','01-06_pairs-of-angles_annotated.pdf','01-99_review-for-test-1_answers.pdf','02-02_inductive-and-deductive-reasoning_part-1_annotated.pdf','02-04_algebraic-reasoning_annotated.pdf','02-05_proving-segments-and-angles_annotated.pdf','02-06_proving-geometric-relationships_annotated.pdf','03-01_pairs-of-lines-and-angles_blank.pdf','03-02_parallel-lines-and-transversals_annotated.pdf','03-03_proofs-with-parallel-lines_annotated.pdf','03-04_proofs-with-perpendicular-lines_annotated.pdf','03-99_review-for-test-2_answers.pdf'], premium:false },
   ];
   const byKey = Object.fromEntries(MODULES.map((module) => [module.key, module]));
@@ -274,7 +274,7 @@
     const section = document.getElementById('moduleSettingsSection'); if (!section) return;
     const unlocked = !!app.hasPremiumAccess?.(); const preferences = readPreferences(); const saved = app.state?.geometryModules || preferences.modules || {};
     const markup = ['unit-1','unit-2','unit-3','unit-4','reference'].map((unit) => {
-      const label = unit === 'reference' ? 'Theorems, Definitions, Postulates & Properties' : unit === 'unit-4' ? 'Unit 4 · Coordinate Transformations' : `Unit ${unit.slice(-1)}`;
+      const label = unit === 'reference' ? 'Theorems, Definitions, Postulates & Properties' : `Unit ${unit.slice(-1)}`;
       const cards = MODULES.filter((module) => module.unit === unit).map((module) => {
         const locked = module.premium === true && !unlocked;
         const questionCount = module.key === 'geometry-reference' ? (window.VertexTheoremDrill || []).reduce((sum, rule) => sum + rule.questions.length, 0) : (QUESTIONS[module.key] || []).length;
@@ -450,7 +450,7 @@
   window.VertexMathAnswer = { normalize:normalizeAnswer, answerSet }; installMathKeyboard(); installProofBuilder(app); renderSettings(app); app.updateHomeSummary();
     if (!document.getElementById('vertexTransformationNoticeAction')) {
       const panel = document.getElementById('studyNotificationPanel');
-      const notice = [...(panel?.querySelectorAll('.study-notice-list article') || [])].find((article) => article.querySelector('strong')?.textContent === 'New: coordinate transformations practice');
+      const notice = [...(panel?.querySelectorAll('.study-notice-list article') || [])].find((article) => article.querySelector('strong')?.textContent === 'New: rotations and reflections practice');
       const actions = notice?.querySelector('.study-notice-actions');
       if (actions && !actions.querySelector('#vertexTransformationNoticeAction')) {
         const action = document.createElement('button'); action.id='vertexTransformationNoticeAction'; action.type='button'; action.textContent='Open transformation practice';
